@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DramaTracker" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondary_variant</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">#1F2937</item>
+        <item name="colorSurface">#374151</item>
+        <item name="colorOnBackground">#F9FAFB</item>
+        <item name="colorOnSurface">#F9FAFB</item>
+        
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">#F9FAFB</item>
+        <item name="android:textColorSecondary">#9CA3AF</item>
+    </style>
+</resources>

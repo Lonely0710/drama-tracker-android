@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">追剧控</string>
+    
+    <!-- 底部导航 -->
+    <string name="nav_home">首页</string>
+    <string name="nav_record">记录</string>
+    <string name="nav_recommend">推荐</string>
+    <string name="nav_settings">设置</string>
+    
+    <!-- 页面标题 -->
+    <string name="title_home">首页</string>
+    <string name="title_record">记录</string>
+    <string name="title_recommend">推荐</string>
+    <string name="title_settings">设置</string>
+    
+    <!-- 搜索 -->
+    <string name="search_hint">搜索影视作品</string>
+    
+    <!-- 首页 -->
+    <string name="douban_title">豆瓣电影</string>
+    <string name="douban_desc">热门电影推荐</string>
+    <string name="imdb_title">IMDb</string>
+    <string name="imdb_desc">全球影视资讯</string>
+    <string name="bangumi_title">Bangumi</string>
+    <string name="bangumi_desc">番剧更新</string>
+    <string name="collection_title">我的收藏</string>
+    <string name="collection_desc">查看收藏记录</string>
+    <string name="recent_updates">最近更新</string>
+    
+    <!-- 设置 -->
+    <string name="settings_dark_mode">深色模式</string>
+    <string name="settings_notification">通知设置</string>
+    <string name="settings_data">数据管理</string>
+    <string name="settings_help">帮助与反馈</string>
+    <string name="settings_about">关于我们</string>
+</resources>
