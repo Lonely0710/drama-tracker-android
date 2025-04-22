@@ -37,7 +37,6 @@ public abstract class BaseFragment extends Fragment {
         mToolbar = mRootView.findViewById(R.id.toolbar);
         mIvLogo = mRootView.findViewById(R.id.iv_logo);
         mTvTitle = mRootView.findViewById(R.id.tv_title);
-//        mSearchContainer = mRootView.findViewById(R.id.search_container);
         mBtnNotification = mRootView.findViewById(R.id.btn_notification);
     }
     
@@ -47,20 +46,12 @@ public abstract class BaseFragment extends Fragment {
         if (mTvTitle != null) {
             mTvTitle.setText(title);
             mTvTitle.setVisibility(View.VISIBLE);
-            mIvLogo.setVisibility(View.GONE);
         }
     }
     
     protected void showLogo() {
         if (mIvLogo != null && mTvTitle != null) {
             mIvLogo.setVisibility(View.VISIBLE);
-            mTvTitle.setVisibility(View.GONE);
-        }
-    }
-    
-    protected void showSearch(boolean show) {
-        if (mSearchContainer != null) {
-            mSearchContainer.setVisibility(show ? View.VISIBLE : View.GONE);
         }
     }
     

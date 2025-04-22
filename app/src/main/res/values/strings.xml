@@ -9,10 +9,10 @@
     <string name="nav_settings">设置</string>
     
     <!-- 页面标题 -->
-    <string name="title_home">首页</string>
-    <string name="title_record">记录</string>
-    <string name="title_recommend">推荐</string>
-    <string name="title_settings">设置</string>
+    <string name="title_home">Home</string>
+    <string name="title_record">Library</string>
+    <string name="title_recommend">Recommend</string>
+    <string name="title_settings">Settings</string>
     
     <!-- 搜索 -->
     <string name="search_hint">搜索影视作品</string>

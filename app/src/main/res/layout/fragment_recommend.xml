@@ -4,61 +4,141 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
+    
     <include
         android:id="@+id/toolbar"
         layout="@layout/layout_top_bar" />
+    
+    <!-- 搜索框 -->
+    <LinearLayout
+        android:id="@+id/search_bar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_search"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chip_group"
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_search"
+            android:tint="@color/text_secondary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="搜索影视作品"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp" /> // 将 14sp 修改为 16sp
+    </LinearLayout>
+
+    <!-- 分类标签 -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        app:singleSelection="true">
+        android:scrollbars="none">
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_all"
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="全部"
-            android:checked="true"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="8dp"
+            app:chipSpacingHorizontal="8dp"
+            app:singleSelection="true">
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_action"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="动作"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_all"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="全部"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:checked="true"
+                android:textColor="@color/on_primary"
+                app:chipBackgroundColor="@color/primary"
+                app:chipCornerRadius="14dp"
+                app:chipMinHeight="32dp"
+                app:chipMinTouchTargetSize="32dp"
+                app:textEndPadding="12dp"
+                app:textStartPadding="12dp" />
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_scifi"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="科幻"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_action"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="动作"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                app:chipBackgroundColor="@color/surface"
+                app:chipCornerRadius="14dp"
+                app:chipMinHeight="32dp"
+                app:chipMinTouchTargetSize="32dp"
+                app:textEndPadding="12dp"
+                app:textStartPadding="12dp" />
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_drama"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="剧情"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_scifi"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="科幻"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                app:chipBackgroundColor="@color/surface"
+                app:chipCornerRadius="14dp"
+                app:chipMinHeight="32dp"
+                app:chipMinTouchTargetSize="32dp"
+                app:textEndPadding="12dp"
+                app:textStartPadding="12dp" />
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chip_comedy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="喜剧"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_drama"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="剧情"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                app:chipBackgroundColor="@color/surface"
+                app:chipCornerRadius="14dp"
+                app:chipMinHeight="32dp"
+                app:chipMinTouchTargetSize="32dp"
+                app:textEndPadding="12dp"
+                app:textStartPadding="12dp" />
 
-    </com.google.android.material.chip.ChipGroup>
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_comedy"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="喜剧"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                app:chipBackgroundColor="@color/surface"
+                app:chipCornerRadius="14dp"
+                app:chipMinHeight="32dp"
+                app:chipMinTouchTargetSize="32dp"
+                app:textEndPadding="12dp"
+                app:textStartPadding="12dp" />
 
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <!-- 内容区域 -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_recommendations"
+        android:id="@+id/rv_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp"
-        android:clipToPadding="false" />
+        android:layout_height="match_parent" />
 
 </LinearLayout>

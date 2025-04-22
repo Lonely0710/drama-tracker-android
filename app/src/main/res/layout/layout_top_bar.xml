@@ -30,6 +30,7 @@
             android:textSize="18sp"
             android:textColor="@color/text_primary"
             android:textStyle="bold"
+            android:fontFamily="@font/pacifico" 
             android:visibility="visible"/>
 
         <ImageButton

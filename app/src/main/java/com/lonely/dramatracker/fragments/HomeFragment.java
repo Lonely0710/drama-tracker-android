@@ -3,7 +3,6 @@ package com.lonely.dramatracker.fragments;
 import android.os.Bundle;
 import android.view.View;
 import com.lonely.dramatracker.R;
-import com.lonely.dramatracker.fragments.BaseFragment;
 
 public class HomeFragment extends BaseFragment {
 
