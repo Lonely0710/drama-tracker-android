@@ -31,6 +31,18 @@
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.DramaTracker.MediumComponent</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.DramaTracker.LargeComponent</item>
     </style>
+
+    <!-- NoActionBar theme -->
+    <style name="Theme.DramaTracker.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
     
     <!-- Shape Appearances -->
     <style name="ShapeAppearance.DramaTracker.SmallComponent" parent="ShapeAppearance.MaterialComponents.SmallComponent">

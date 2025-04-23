@@ -5,7 +5,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -17,7 +16,7 @@ import com.lonely.dramatracker.fragments.RecordFragment;
 import com.lonely.dramatracker.fragments.RecommendFragment;
 import com.lonely.dramatracker.fragments.SettingsFragment;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
     
     private FragmentManager fragmentManager;
     private Fragment currentFragment;
