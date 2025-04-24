@@ -8,6 +8,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ public abstract class BaseFragment extends Fragment {
     protected TextView mTvTitle;
     protected FrameLayout mSearchContainer;
     protected ImageButton mBtnNotification;
+    protected View mLoadingView;
     
     @Nullable
     @Override
@@ -38,6 +40,17 @@ public abstract class BaseFragment extends Fragment {
         mIvLogo = mRootView.findViewById(R.id.iv_logo);
         mTvTitle = mRootView.findViewById(R.id.tv_title);
         mBtnNotification = mRootView.findViewById(R.id.btn_notification);
+        
+        // 初始化加载动画视图
+        initLoadingView();
+    }
+    
+    private void initLoadingView() {
+        // 将加载动画布局添加到根视图
+        View loadingView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.layout_loading, (ViewGroup) mRootView, false);
+        ((ViewGroup) mRootView).addView(loadingView);
+        mLoadingView = loadingView;
     }
     
     protected abstract int getLayoutId();
@@ -58,6 +71,38 @@ public abstract class BaseFragment extends Fragment {
     protected void showNotification(boolean show) {
         if (mBtnNotification != null) {
             mBtnNotification.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    /**
+     * 显示或隐藏加载动画
+     * @param show true 显示，false 隐藏
+     */
+    protected void showLoading(boolean show) {
+        if (mLoadingView != null) {
+            mLoadingView.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    /**
+     * 在主线程执行代码
+     * @param runnable 要执行的代码
+     */
+    protected void runOnUiThread(Runnable runnable) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(runnable);
+        }
+    }
+
+    /**
+     * 显示提示信息
+     * @param message 提示信息内容
+     */
+    protected void showToast(String message) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> 
+                Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show()
+            );
         }
     }
 }

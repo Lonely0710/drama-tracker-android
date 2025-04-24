@@ -3,11 +3,11 @@ package com.lonely.dramatracker.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.Toast;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.lonely.dramatracker.R;
+import com.lonely.dramatracker.services.AppwriteWrapper;
 
 public class LoginActivity extends BaseActivity {
     
@@ -22,11 +22,11 @@ public class LoginActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         
-        initView();
-        initListeners();
+        initViews();
+        setupListeners();
     }
     
-    private void initView() {
+    private void initViews() {
         etUsername = findViewById(R.id.et_username);
         etPassword = findViewById(R.id.et_password);
         btnLogin = findViewById(R.id.btn_login);
@@ -34,38 +34,61 @@ public class LoginActivity extends BaseActivity {
         btnForgotPassword = findViewById(R.id.btn_forgot_password);
     }
     
-    private void initListeners() {
-        // 登录按钮点击事件
-        btnLogin.setOnClickListener(v -> {
-            String username = etUsername.getText().toString().trim();
-            String password = etPassword.getText().toString().trim();
-            
-            if (TextUtils.isEmpty(username)) {
-                etUsername.setError("请输入用户名");
-                return;
-            }
-            
-            if (TextUtils.isEmpty(password)) {
-                etPassword.setError("请输入密码");
-                return;
-            }
-            
-            // TODO: 实现实际的登录逻辑
-            // 这里暂时直接跳转到主界面
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-        });
-        
-        // 注册按钮点击事件
-        btnRegister.setOnClickListener(v -> {
-            // TODO: 实现注册功能
-            Toast.makeText(this, "注册功能开发中", Toast.LENGTH_SHORT).show();
-        });
-        
-        // 忘记密码按钮点击事件
+    private void setupListeners() {
+        btnLogin.setOnClickListener(v -> handleLogin());
+        btnRegister.setOnClickListener(v -> navigateToRegister());
         btnForgotPassword.setOnClickListener(v -> {
-            // TODO: 实现忘记密码功能
-            Toast.makeText(this, "忘记密码功能开发中", Toast.LENGTH_SHORT).show();
+            showToast("忘记密码功能开发中");
         });
+    }
+    
+    private void handleLogin() {
+        String email = etUsername.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(email)) {
+            etUsername.setError("请输入邮箱");
+            return;
+        }
+        
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("请输入密码");
+            return;
+        }
+        
+        // 显示加载动画
+        showLoading(true, btnLogin, btnRegister, btnForgotPassword);
+        
+        // 使用AppwriteWrapper进行登录
+        new Thread(() -> {
+            try {
+                AppwriteWrapper.login(email, password);
+                
+                // 登录成功，跳转到主页面
+                runOnUiThread(() -> {
+                    showLoading(false, btnLogin, btnRegister, btnForgotPassword);
+                    showToast("登录成功");
+                    navigateToMain();
+                });
+            } catch (Exception e) {
+                // 登录失败，显示错误信息
+                runOnUiThread(() -> {
+                    showLoading(false, btnLogin, btnRegister, btnForgotPassword);
+                    showError(e.getMessage());
+                });
+            }
+        }).start();
+    }
+    
+    private void navigateToRegister() {
+        Intent intent = new Intent(this, RegisterActivity.class);
+        startActivity(intent);
+        finish();
+    }
+    
+    private void navigateToMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 }
