@@ -14,5 +14,6 @@
 .cxx
 local.properties
 /logs
-# 忽略密钥文件
-app/src/main/assets/secrets.properties
+/app/src/main/assets/secrets.properties
+/reference
+/app/release

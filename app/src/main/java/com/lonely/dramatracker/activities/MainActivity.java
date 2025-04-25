@@ -175,36 +175,81 @@ public class MainActivity extends BaseActivity {
     
     private void initFragment() {
         fragmentManager = getSupportFragmentManager();
+        
+        // 延迟初始化Fragments
         homeFragment = new HomeFragment();
         recordFragment = new RecordFragment();
         recommendFragment = new RecommendFragment();
         settingsFragment = new SettingsFragment();
         
-        // 默认显示首页
-        switchFragment(homeFragment);
-        updateNavSelection(navHome);
+        // 使用post确保在正确的生命周期中执行
+        navHome.post(() -> {
+            // 默认显示首页
+            switchFragment(homeFragment);
+            updateNavSelection(navHome);
+        });
     }
     
     private void switchFragment(Fragment targetFragment) {
         if (currentFragment == targetFragment) {
             return;
         }
-        
+
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         
-        // 隐藏当前Fragment
-        if (currentFragment != null) {
-            transaction.hide(currentFragment);
-        }
-        
-        // 显示目标Fragment
-        if (targetFragment.isAdded()) {
-            transaction.show(targetFragment);
-        } else {
+        // 设置转场动画
+        transaction.setCustomAnimations(
+            R.anim.fragment_slide_enter_right,
+            R.anim.fragment_slide_exit_left,
+            R.anim.fragment_slide_enter_left,
+            R.anim.fragment_slide_exit_right
+        );
+
+        // 如果目标Fragment未添加，则添加
+        if (!targetFragment.isAdded()) {
+            if (currentFragment != null) {
+                transaction.hide(currentFragment);
+            }
             transaction.add(R.id.fragment_container, targetFragment);
+        } else {
+            // 如果目标Fragment已添加，则显示/隐藏
+            if (currentFragment != null) {
+                transaction.hide(currentFragment);
+            }
+            transaction.show(targetFragment);
         }
-        
-        transaction.commit();
+
+        transaction.commitAllowingStateLoss();
         currentFragment = targetFragment;
+    }
+
+    // 添加公共方法用于更新导航状态
+    public void updateNavigationState(String targetSection) {
+        // 使用post确保在主线程执行
+        runOnUiThread(() -> {
+            switch (targetSection) {
+                case "HOME":
+                    updateNavSelection(navHome);
+                    switchFragment(homeFragment);
+                    break;
+                case "RECORD":
+                    updateNavSelection(navRecord);
+                    switchFragment(recordFragment);
+                    break;
+                case "RECOMMEND":
+                    updateNavSelection(navRecommend);
+                    switchFragment(recommendFragment);
+                    break;
+                case "SETTINGS":
+                    updateNavSelection(navSettings);
+                    switchFragment(settingsFragment);
+                    break;
+            }
+        });
+    }
+
+    // 添加获取当前Fragment的方法
+    public Fragment getCurrentFragment() {
+        return currentFragment;
     }
 }

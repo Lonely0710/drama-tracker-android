@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 底部导航栏 -->
+    <dimen name="action_bar_size">56dp</dimen>
     <dimen name="fab_middle_space">56dp</dimen>
     <dimen name="nav_item_padding">16dp</dimen>
     
