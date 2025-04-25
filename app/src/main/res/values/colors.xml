@@ -19,6 +19,8 @@
     <!-- 文字颜色 -->
     <color name="text_primary">#1F2937</color>
     <color name="text_secondary">#6B7280</color>
+    <color name="text_tertiary">#9E9E9E</color>
+    <color name="text_quaternary">#E0E0E0</color>
     
     <!-- 功能色 -->
     <color name="error">#DC2626</color>

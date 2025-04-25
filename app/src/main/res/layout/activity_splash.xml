@@ -37,10 +37,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:fontFamily="@font/pacifico"
+        android:fontFamily="@font/roboto"
         android:text="Your films. Your archive."
         android:textColor="@color/text_primary"
-        android:textSize="24sp"
+        android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/animation_plane" />
@@ -57,19 +57,35 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <ImageView
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_marginEnd="8dp"
-            android:src="@drawable/ic_logo"
-            app:tint="@color/primary" />
+            android:src="@drawable/ic_logo"/>
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="追剧控"
-            android:textColor="@color/primary"
-            android:textSize="36sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="影迹"
+                android:textColor="@color/text_secondary"
+                android:textSize="28sp"
+                android:fontFamily="@font/fangzheng" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Epilog"
+                android:textColor="@color/text_tertiary"
+                android:textSize="14sp"
+                android:fontFamily="@font/roboto"
+                android:layout_marginTop="-2dp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
