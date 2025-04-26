@@ -25,8 +25,8 @@
     <!-- 功能色 -->
     <color name="error">#DC2626</color>
     <color name="on_error">#FFFFFF</color>
-    <color name="success">#059669</color>
-    <color name="warning">#D97706</color>
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FFC107</color>
     <color name="text_input_box_stroke">#1F000000</color>
     
     <!-- 分割线 -->

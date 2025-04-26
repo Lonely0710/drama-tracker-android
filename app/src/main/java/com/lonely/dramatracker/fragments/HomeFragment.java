@@ -14,6 +14,8 @@ public class HomeFragment extends BaseFragment {
     private LinearLayout ll_douban;
     private LinearLayout ll_imdb;
     private LinearLayout ll_collection;
+    private LinearLayout movie_search_bar;
+    private LinearLayout anime_search_bar;
 
     @Override
     protected int getLayoutId() {
@@ -33,6 +35,8 @@ public class HomeFragment extends BaseFragment {
         ll_douban = view.findViewById(R.id.ll_douban);
         ll_imdb = view.findViewById(R.id.ll_imdb);
         ll_collection = view.findViewById(R.id.ll_collection);
+        movie_search_bar = view.findViewById(R.id.movie_search_bar);
+        anime_search_bar = view.findViewById(R.id.anime_search_bar);
         
         // 初始化点击事件
         setupClickListeners();
@@ -50,6 +54,9 @@ public class HomeFragment extends BaseFragment {
         ll_douban.setOnClickListener(v -> openWebView("DOUBAN"));
         ll_imdb.setOnClickListener(v -> openWebView("IMDB"));
         ll_collection.setOnClickListener(v -> openRecordFragment());
+        
+        movie_search_bar.setOnClickListener(v -> openSearch("movie"));
+        anime_search_bar.setOnClickListener(v -> openSearch("anime"));
     }
 
     private void openRecordFragment() {
@@ -106,6 +113,29 @@ public class HomeFragment extends BaseFragment {
             R.anim.fragment_slide_exit_right
         );
         transaction.replace(R.id.fragment_container, webViewFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    private void openSearch(String type) {
+        SearchFragment searchFragment = new SearchFragment();
+        searchFragment.setSearchType(type);
+        searchFragment.setOnSearchResultClickListener(result -> {
+            // TODO: 处理搜索结果点击
+        });
+        searchFragment.setOnCloseListener(() -> {
+            // 关闭搜索页面
+            getParentFragmentManager().popBackStack();
+        });
+        
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(
+            R.anim.fragment_slide_enter_right,
+            R.anim.fragment_slide_exit_left,
+            R.anim.fragment_slide_enter_left,
+            R.anim.fragment_slide_exit_right
+        );
+        transaction.add(R.id.fragment_container, searchFragment);
         transaction.addToBackStack(null);
         transaction.commit();
     }

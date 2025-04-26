@@ -21,31 +21,77 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 搜索框 -->
+            <!-- 搜索框区域 -->
             <LinearLayout
-                android:id="@+id/search_bar"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                android:background="@drawable/bg_search"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_search"
-                    app:tint="@color/text_secondary" />
+                <!-- 影视搜索框 -->
+                <LinearLayout
+                    android:id="@+id/movie_search_bar"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_search"
+                    android:gravity="center" 
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_movie"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="搜索电影/电视剧"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" /> 
+                </LinearLayout>
+
+                <!-- 动漫搜索框 -->
+                <LinearLayout
+                    android:id="@+id/anime_search_bar"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:text="搜索影视、动漫..."
-                    android:textColor="@color/text_secondary"
-                    android:textSize="16sp" />
+                    android:background="@drawable/bg_search"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_bilibili"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="搜索动漫"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
             </LinearLayout>
             
             <!-- 快捷入口区域 -->
@@ -159,7 +205,7 @@
                         android:layout_height="40dp"
                         android:background="@drawable/bg_icon_circle"
                         android:padding="8dp"
-                        android:src="@drawable/ic_bilibili"
+                        android:src="@drawable/ic_bangumi"
                         app:tint="@color/primary" />
 
                     <LinearLayout
