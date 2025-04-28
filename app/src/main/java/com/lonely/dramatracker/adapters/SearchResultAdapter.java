@@ -105,7 +105,28 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
         if (holder.tvDuration != null) {
             String duration = result.getDuration();
             if (duration != null && !duration.isEmpty()) {
-                holder.tvDuration.setText(duration);
+                // 根据媒体类型格式化显示时长
+                String formattedDuration;
+                if ("anime".equals(result.getMediaType()) || "tv".equals(result.getMediaType())) {
+                    // 动漫/电视剧，显示为"xx集"
+                    formattedDuration = duration + "集";
+                } else {
+                    // 电影，尝试转换为小时+分钟格式
+                    try {
+                        int minutes = Integer.parseInt(duration.trim());
+                        if (minutes >= 60) {
+                            int hours = minutes / 60;
+                            int remainingMinutes = minutes % 60;
+                            formattedDuration = hours + "时" + (remainingMinutes > 0 ? remainingMinutes + "分" : "");
+                        } else {
+                            formattedDuration = minutes + "分钟";
+                        }
+                    } catch (NumberFormatException e) {
+                        // 如果无法解析为数字，直接返回原始值
+                        formattedDuration = duration;
+                    }
+                }
+                holder.tvDuration.setText(formattedDuration);
                 holder.tvDuration.setVisibility(View.VISIBLE);
             } else {
                 holder.tvDuration.setVisibility(View.GONE);

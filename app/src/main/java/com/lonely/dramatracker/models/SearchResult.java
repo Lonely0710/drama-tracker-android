@@ -32,6 +32,7 @@ public class SearchResult implements Parcelable {
     
     // 状态
     private boolean isCollected;
+    private String collectionId; // 收藏记录ID
 
     private SearchResult(Builder builder) {
         this.sourceType = builder.sourceType;
@@ -51,6 +52,7 @@ public class SearchResult implements Parcelable {
         this.ratingImdb = builder.ratingImdb;
         this.ratingBangumi = builder.ratingBangumi;
         this.isCollected = builder.isCollected;
+        this.collectionId = builder.collectionId;
     }
 
     protected SearchResult(Parcel in) {
@@ -71,6 +73,7 @@ public class SearchResult implements Parcelable {
         ratingImdb = in.readDouble();
         ratingBangumi = in.readDouble();
         isCollected = in.readByte() != 0;
+        collectionId = in.readString();
     }
 
     public static final Creator<SearchResult> CREATOR = new Creator<SearchResult>() {
@@ -163,6 +166,14 @@ public class SearchResult implements Parcelable {
         isCollected = collected;
     }
 
+    public String getCollectionId() {
+        return collectionId;
+    }
+
+    public void setCollectionId(String collectionId) {
+        this.collectionId = collectionId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -201,6 +212,7 @@ public class SearchResult implements Parcelable {
         dest.writeDouble(ratingImdb);
         dest.writeDouble(ratingBangumi);
         dest.writeByte((byte) (isCollected ? 1 : 0));
+        dest.writeString(collectionId);
     }
 
     @Override
@@ -251,6 +263,7 @@ public class SearchResult implements Parcelable {
         
         // 状态
         private boolean isCollected;
+        private String collectionId;
 
         // --- Setters ---
         
@@ -340,6 +353,11 @@ public class SearchResult implements Parcelable {
         // 状态setters
         public Builder setCollected(boolean collected) {
             isCollected = collected;
+            return this;
+        }
+
+        public Builder setCollectionId(String collectionId) {
+            this.collectionId = collectionId;
             return this;
         }
 

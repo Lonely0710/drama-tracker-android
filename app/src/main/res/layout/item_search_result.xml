@@ -248,7 +248,7 @@
                 android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_favorite_border"
-                app:tint="@color/primary"
+                app:tint="@color/warning"
                 tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
 
         </LinearLayout>

@@ -25,6 +25,22 @@ object AppConfig {
     lateinit var COLLECTION_MEDIA_ID: String
     lateinit var COLLECTION_MEDIA_SOURCE_ID: String
     
+    // 为Java代码提供静态引用
+    @JvmField
+    var DATABASE_ID_STATIC: String = ""
+    
+    @JvmField
+    var COLLECTION_USERS_ID_STATIC: String = ""
+    
+    @JvmField
+    var COLLECTION_COLLECTIONS_ID_STATIC: String = ""
+    
+    @JvmField
+    var COLLECTION_MEDIA_ID_STATIC: String = ""
+    
+    @JvmField
+    var COLLECTION_MEDIA_SOURCE_ID_STATIC: String = ""
+    
     /**
      * 初始化配置
      * @param context 应用上下文
@@ -55,6 +71,13 @@ object AppConfig {
                 ?: throw RuntimeException("APPWRITE_COLLECTION_MEDIA_ID not found in config")
             COLLECTION_MEDIA_SOURCE_ID = properties.getProperty("APPWRITE_COLLECTION_MEDIA_SOURCE_ID")
                 ?: throw RuntimeException("APPWRITE_COLLECTION_MEDIA_SOURCE_ID not found in config")
+            
+            // 为Java静态字段赋值
+            DATABASE_ID_STATIC = DATABASE_ID
+            COLLECTION_USERS_ID_STATIC = COLLECTION_USERS_ID
+            COLLECTION_COLLECTIONS_ID_STATIC = COLLECTION_COLLECTIONS_ID
+            COLLECTION_MEDIA_ID_STATIC = COLLECTION_MEDIA_ID
+            COLLECTION_MEDIA_SOURCE_ID_STATIC = COLLECTION_MEDIA_SOURCE_ID
             
             Log.d(TAG, "配置加载成功")
         } catch (e: Exception) {

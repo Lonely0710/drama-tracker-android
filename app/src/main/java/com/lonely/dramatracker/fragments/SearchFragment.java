@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -120,9 +121,27 @@ public class SearchFragment extends BaseFragment {
         
         adapter.setOnCollectClickListener((result, isCollect) -> {
             if (isCollect) {
-                searchService.addToCollection(result);
+                searchService.addToCollection(result, new Runnable() {
+                    @Override
+                    public void run() {
+                        requireActivity().runOnUiThread(() -> {
+                            adapter.notifyDataSetChanged();
+                            // 收藏成功提示
+                            Toast.makeText(requireContext(), "收藏成功", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
             } else {
-                searchService.removeFromCollection(result);
+                searchService.removeFromCollection(result, new Runnable() {
+                    @Override
+                    public void run() {
+                        requireActivity().runOnUiThread(() -> {
+                            adapter.notifyDataSetChanged();
+                            // 取消收藏提示
+                            Toast.makeText(requireContext(), "已取消收藏", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
             }
         });
     }

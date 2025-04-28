@@ -1,53 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <include
-        android:id="@+id/toolbar"
-        layout="@layout/layout_top_bar" />
-
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tab_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/background"
-        app:tabMode="fixed"
-        app:tabGravity="fill"
-        app:tabTextColor="@color/text_secondary"
-        app:tabSelectedTextColor="@color/primary"
-        app:tabIndicatorColor="@color/primary"
-        app:tabTextAppearance="@style/TextAppearance.DramaTracker.Tab">
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="全部" />
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="电影" />
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="电视剧" />
-
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="动漫" />
-
-    </com.google.android.material.tabs.TabLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_records"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
-        android:clipToPadding="false" />
+        android:orientation="vertical">
 
-</LinearLayout> 
+        <include
+            android:id="@+id/toolbar"
+            layout="@layout/layout_top_bar" />
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/background"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabTextColor="@color/text_secondary"
+            app:tabSelectedTextColor="@color/primary"
+            app:tabIndicatorColor="@color/primary"
+            app:tabTextAppearance="@style/TextAppearance.DramaTracker.Tab">
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="全部" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="电影" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="电视剧" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="动漫" />
+
+        </com.google.android.material.tabs.TabLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_records"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp"
+                android:clipToPadding="false"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottie_loading"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:visibility="gone"
+                app:lottie_rawRes="@raw/play_loading"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_empty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="暂无记录"
+                android:textColor="@color/text_secondary"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+    <!-- 悬浮切换按钮 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_switch_mode"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="end|top"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="110dp"
+        android:src="@drawable/ic_select_list"
+        app:tint="@color/primary"
+        app:backgroundTint="@color/surface"
+        app:borderWidth="0dp"
+        android:contentDescription="切换视图" />
+
+</FrameLayout> 

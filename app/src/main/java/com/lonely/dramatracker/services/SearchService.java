@@ -18,7 +18,11 @@ public interface SearchService {
     void search(String keyword, String type, SearchCallback callback);
     void search(String keyword, String type, JsonSearchCallback callback);
     void addToCollection(SearchResult result);
+    void addToCollection(SearchResult result, Runnable onSuccess);
+    void addToCollection(SearchResult result, Runnable onSuccess, Runnable onFailure);
     void removeFromCollection(SearchResult result);
+    void removeFromCollection(SearchResult result, Runnable onSuccess);
+    void removeFromCollection(SearchResult result, Runnable onSuccess, Runnable onFailure);
 
     /**
      * 获取媒体详细信息
