@@ -6,11 +6,11 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.airbnb.lottie.LottieAnimationView;
 import com.google.android.material.tabs.TabLayout;
 import com.lonely.dramatracker.R;
 import com.lonely.dramatracker.adapters.RecordAdapter;
-import com.lonely.dramatracker.fragments.BaseFragment;
 import com.lonely.dramatracker.models.RecordItem;
 import com.lonely.dramatracker.services.AppwriteWrapper;
 import java.util.ArrayList;
@@ -26,10 +26,12 @@ public class RecordFragment extends BaseFragment {
     private TextView tvEmpty;
     private TabLayout tabLayout;
     private FloatingActionButton fabSwitchMode;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private RecordAdapter adapter;
     private List<RecordItem> allRecords = new ArrayList<>();
     private List<RecordItem> filteredRecords = new ArrayList<>();
     private boolean isGridMode = true;
+    private boolean isFirstLoad = true;
 
     @Override
     protected int getLayoutId() {
@@ -49,17 +51,32 @@ public class RecordFragment extends BaseFragment {
         loadRecords();
     }
     
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (!isFirstLoad) {
+            refreshRecords();
+        } else {
+            isFirstLoad = false;
+        }
+    }
+    
     private void initViews(View view) {
         rvRecords = view.findViewById(R.id.rv_records);
         lottieLoading = view.findViewById(R.id.lottie_loading);
         tvEmpty = view.findViewById(R.id.tv_empty);
         tabLayout = view.findViewById(R.id.tab_layout);
         fabSwitchMode = view.findViewById(R.id.fab_switch_mode);
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
 
         // 设置RecyclerView
         rvRecords.setLayoutManager(new GridLayoutManager(getContext(), 3));
         adapter = new RecordAdapter(isGridMode);
         rvRecords.setAdapter(adapter);
+
+        // 设置下拉刷新
+        swipeRefreshLayout.setColorSchemeResources(R.color.primary);
+        swipeRefreshLayout.setOnRefreshListener(this::refreshRecords);
 
         // 修正悬浮按钮点击逻辑，确保图标与模式对应
         fabSwitchMode.setOnClickListener(v -> {
@@ -122,8 +139,18 @@ public class RecordFragment extends BaseFragment {
         });
     }
 
+    private void refreshRecords() {
+        // 开始刷新动画
+        swipeRefreshLayout.setRefreshing(true);
+        // 加载记录
+        loadRecords();
+    }
+
     private void loadRecords() {
-        lottieLoading.setVisibility(View.VISIBLE);
+        // 显示加载动画，但不显示空提示
+        if (!swipeRefreshLayout.isRefreshing()) {
+            lottieLoading.setVisibility(View.VISIBLE);
+        }
         tvEmpty.setVisibility(View.GONE);
 
         new Thread(() -> {
@@ -216,7 +243,10 @@ public class RecordFragment extends BaseFragment {
                 }
 
                 requireActivity().runOnUiThread(() -> {
+                    // 停止所有加载动画
                     lottieLoading.setVisibility(View.GONE);
+                    swipeRefreshLayout.setRefreshing(false);
+                    
                     if (allRecords.isEmpty()) {
                         tvEmpty.setVisibility(View.VISIBLE);
                     } else {
@@ -226,7 +256,10 @@ public class RecordFragment extends BaseFragment {
             } catch (Exception e) {
                 Log.e(TAG, "loadRecords: 加载失败", e);
                 requireActivity().runOnUiThread(() -> {
+                    // 停止所有加载动画
                     lottieLoading.setVisibility(View.GONE);
+                    swipeRefreshLayout.setRefreshing(false);
+                    
                     tvEmpty.setVisibility(View.VISIBLE);
                     tvEmpty.setText("加载失败: " + e.getMessage());
                 });
