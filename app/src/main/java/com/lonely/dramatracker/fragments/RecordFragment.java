@@ -198,6 +198,16 @@ public class RecordFragment extends BaseFragment {
                                 Log.e(TAG, "解析媒体数据出错: " + e.getMessage(), e);
                             }
                             
+                            // 获取并设置观看状态
+                            Object watchStatusObj = collection.get("watch_status");
+                            if (watchStatusObj != null) {
+                                boolean watchStatus = Boolean.parseBoolean(watchStatusObj.toString());
+                                item.setWatched(watchStatus);
+                                Log.d(TAG, "观看状态: mediaId=" + mediaId + ", watchStatus=" + watchStatus);
+                            } else {
+                                item.setWatched(false);
+                            }
+                            
                             allRecords.add(item);
                         } else {
                             Log.e(TAG, "loadRecords: 获取媒体信息失败，mediaId=" + mediaId);

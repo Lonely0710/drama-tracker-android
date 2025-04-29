@@ -141,14 +141,28 @@
 
                 <TextView
                     android:id="@+id/tv_duration"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="139 minutes"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp"
                     android:layout_marginStart="4dp"
                     android:maxLines="1"
                     android:ellipsize="end" />
+                
+                <!-- 观看状态开关 -->
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_watched"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:minHeight="0dp"
+                    android:textSize="0sp"
+                    android:scaleX="0.8"
+                    android:scaleY="0.8"
+                    app:thumbTint="@color/switch_thumb_color"
+                    app:trackTint="@color/switch_track_color" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

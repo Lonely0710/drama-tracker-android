@@ -16,13 +16,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Appwrite 服务封装类
@@ -339,7 +339,7 @@ object Appwrite {
                         AppConfig.DATABASE_ID,
                         AppConfig.COLLECTION_USERS_ID,
                         listOf(
-                            io.appwrite.Query.equal("user_id", currentUser.id)
+                            Query.equal("user_id", currentUser.id)
                         )
                     )
                     
@@ -450,7 +450,7 @@ object Appwrite {
 
     // Java可调用的三表插入方法
     fun addMediaWithSourceAndCollection(result: SearchResult, userId: String, callback: (Boolean) -> Unit) {
-        android.util.Log.d("AppwriteDebug", "addMediaWithSourceAndCollection called, result=$result, userId=$userId")
+        Log.d("AppwriteDebug", "addMediaWithSourceAndCollection called, result=$result, userId=$userId")
         appwriteScope.launch {
             try {
                 checkInitialized()
@@ -458,7 +458,7 @@ object Appwrite {
                 val mediaColId = AppConfig.COLLECTION_MEDIA_ID
                 val mediaSourceColId = AppConfig.COLLECTION_MEDIA_SOURCE_ID
                 val collectionColId = AppConfig.COLLECTION_COLLECTIONS_ID
-                android.util.Log.d("AppwriteDebug", "Appwrite config: dbId=$dbId, mediaColId=$mediaColId, mediaSourceColId=$mediaSourceColId, collectionColId=$collectionColId")
+                Log.d("AppwriteDebug", "Appwrite config: dbId=$dbId, mediaColId=$mediaColId, mediaSourceColId=$mediaSourceColId, collectionColId=$collectionColId")
                 
                 // 1. 检查media是否存在
                 var mediaId: String
@@ -466,14 +466,14 @@ object Appwrite {
                     Query.equal("title_zh", result.titleZh),
                     Query.equal("release_date", result.releaseDate)
                 )
-                android.util.Log.d("AppwriteDebug", "Querying media: title_zh=${result.titleZh}, release_date=${result.releaseDate}")
+                Log.d("AppwriteDebug", "Querying media: title_zh=${result.titleZh}, release_date=${result.releaseDate}")
                 val mediaList = databases.listDocuments(
                     dbId, mediaColId, mediaQuery
                 ).documents
                 
                 if (mediaList.isNotEmpty()) {
                     // 如果media已存在，使用现有ID
-                    android.util.Log.d("AppwriteDebug", "media exists, id=${mediaList[0].id}")
+                    Log.d("AppwriteDebug", "media exists, id=${mediaList[0].id}")
                     mediaId = mediaList[0].id
                 } else {
                     // 如果media不存在，创建新记录
@@ -491,11 +491,11 @@ object Appwrite {
                     if (result.ratingDouban in 0.0..10.0) mediaData["rating_douban"] = result.ratingDouban else mediaData["rating_douban"] = null
                     if (result.ratingImdb in 0.0..10.0) mediaData["rating_imdb"] = result.ratingImdb else mediaData["rating_imdb"] = null
                     if (result.ratingBangumi in 0.0..10.0) mediaData["rating_bangumi"] = result.ratingBangumi else mediaData["rating_bangumi"] = null
-                    android.util.Log.d("AppwriteDebug", "Inserting new media: $mediaData")
+                    Log.d("AppwriteDebug", "Inserting new media: $mediaData")
                     val doc = databases.createDocument(
                         dbId, mediaColId, ID.unique(), mediaData
                     )
-                    android.util.Log.d("AppwriteDebug", "Inserted media id=${doc.id}")
+                    Log.d("AppwriteDebug", "Inserted media id=${doc.id}")
                     mediaId = doc.id
                 }
                 
@@ -513,10 +513,10 @@ object Appwrite {
                         "source_id" to result.sourceId,
                         "source_url" to result.sourceUrl
                     )
-                    android.util.Log.d("AppwriteDebug", "Inserting media_source: $sourceData")
+                    Log.d("AppwriteDebug", "Inserting media_source: $sourceData")
                     databases.createDocument(dbId, mediaSourceColId, ID.unique(), sourceData)
                 } else {
-                    android.util.Log.d("AppwriteDebug", "media_source exists, skipping insertion")
+                    Log.d("AppwriteDebug", "media_source exists, skipping insertion")
                 }
                 
                 // 3. 检查collection是否存在该user_id+media_id组合
@@ -538,11 +538,11 @@ object Appwrite {
                         "watch_status" to false,
                         "notes" to ""
                     )
-                    android.util.Log.d("AppwriteDebug", "Inserting collection: $collectionData")
+                    Log.d("AppwriteDebug", "Inserting collection: $collectionData")
                     databases.createDocument(dbId, collectionColId, ID.unique(), collectionData)
-                    android.util.Log.d("AppwriteDebug", "addMediaWithSourceAndCollection success, inserted to collection table")
+                    Log.d("AppwriteDebug", "addMediaWithSourceAndCollection success, inserted to collection table")
                 } else {
-                    android.util.Log.d("AppwriteDebug", "collection record already exists for user_id=$userId and media_id=$mediaId, skipping insertion")
+                    Log.d("AppwriteDebug", "collection record already exists for user_id=$userId and media_id=$mediaId, skipping insertion")
                 }
                 
                 // 操作完成，无论是跳过还是创建新记录，都视为成功
@@ -709,6 +709,81 @@ object Appwrite {
                 }
             } catch (e: Exception) {
                 Log.e("Appwrite", "移除收藏失败: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    callback(false)
+                }
+            }
+        }
+    }
+
+    /**
+     * 更新观看状态
+     * @param userId 用户ID
+     * @param mediaId 媒体ID
+     * @param watchStatus 观看状态
+     * @param callback 回调函数
+     */
+    fun updateWatchStatus(userId: String, mediaId: String, watchStatus: Boolean, callback: (Boolean) -> Unit) {
+        appwriteScope.launch {
+            try {
+                checkInitialized()
+                val dbId = AppConfig.DATABASE_ID
+                val collectionColId = AppConfig.COLLECTION_COLLECTIONS_ID
+                
+                Log.d("Appwrite", "开始更新观看状态，userId=$userId, mediaId=$mediaId, status=$watchStatus")
+                
+                try {
+                    // 1. 根据userId和mediaId查询collection表
+                    Log.d("Appwrite", "查询collection表，userId=$userId, mediaId=$mediaId")
+                    val collectionQuery = listOf(
+                        Query.equal("user_id", userId),
+                        Query.equal("media_id", mediaId)
+                    )
+                    val collectionDocs = databases.listDocuments(
+                        dbId,
+                        collectionColId,
+                        collectionQuery
+                    )
+                    
+                    if (collectionDocs.documents.isEmpty()) {
+                        Log.e("Appwrite", "未找到对应的collection记录")
+                        withContext(Dispatchers.Main) {
+                            callback(false)
+                        }
+                        return@launch
+                    }
+                    
+                    // 2. 更新collection记录
+                    val collectionDoc = collectionDocs.documents[0]
+                    val collectionId = collectionDoc.id
+                    
+                    Log.d("Appwrite", "开始更新collection记录，id=$collectionId")
+                    
+                    // 3. 准备更新数据
+                    val updateData = mapOf(
+                        "watch_status" to watchStatus
+                    )
+                    
+                    // 4. 执行更新
+                    databases.updateDocument(
+                        dbId,
+                        collectionColId,
+                        collectionId,
+                        updateData
+                    )
+                    
+                    Log.d("Appwrite", "成功更新观看状态")
+                    withContext(Dispatchers.Main) {
+                        callback(true)
+                    }
+                } catch (e: Exception) {
+                    Log.e("Appwrite", "更新观看状态失败: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        callback(false)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Appwrite", "更新观看状态失败: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     callback(false)
                 }

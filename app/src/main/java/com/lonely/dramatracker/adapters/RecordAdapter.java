@@ -6,11 +6,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.lonely.dramatracker.R;
 import com.lonely.dramatracker.models.RecordItem;
+import com.lonely.dramatracker.services.AppwriteWrapper;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +69,7 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
         ImageView ivPoster;
         TextView tvTitle;
         TextView tvSubtitle;
+        SwitchMaterial switchWatched;
         // 列表模式下的额外字段
         TextView tvRating, tvType, tvYear, tvDuration;
         boolean isGridMode;
@@ -77,6 +84,7 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                 tvTitle = itemView.findViewById(R.id.tv_title_original);
                 tvRating = itemView.findViewById(R.id.tv_rating);
                 tvYear = itemView.findViewById(R.id.tv_year);
+                switchWatched = itemView.findViewById(R.id.switch_watched);
             } else {
                 // 列表模式(item_record_list.xml)
                 tvTitle = itemView.findViewById(R.id.tv_title);
@@ -84,6 +92,7 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                 tvType = itemView.findViewById(R.id.tv_type);
                 tvYear = itemView.findViewById(R.id.tv_year);
                 tvDuration = itemView.findViewById(R.id.tv_duration);
+                switchWatched = itemView.findViewById(R.id.switch_watched);
             }
         }
 
@@ -161,6 +170,44 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                         tvDuration.setText("");
                     }
                 }
+            }
+            
+            // 设置观看状态开关
+            if (switchWatched != null) {
+                // 设置当前状态
+                switchWatched.setChecked(item.isWatched());
+                
+                // 设置开关状态变化监听器
+                switchWatched.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    // 避免重复触发
+                    if (isChecked == item.isWatched()) return;
+                    
+                    // 更新本地状态
+                    item.setWatched(isChecked);
+                    
+                    // 获取当前用户ID
+                    String userId = AppwriteWrapper.getCurrentUserId();
+                    String mediaId = item.getMediaId();
+                    
+                    Log.d(TAG, "更新观看状态: userId=" + userId + ", mediaId=" + mediaId + ", status=" + isChecked);
+                    
+                    // 调用API更新观看状态
+                    AppwriteWrapper.updateWatchStatus(userId, mediaId, isChecked, 
+                        () -> {
+                            // 成功回调
+                            Log.d(TAG, "观看状态更新成功");
+                        }, 
+                        () -> {
+                            // 失败回调，回滚UI状态
+                            Log.e(TAG, "观看状态更新失败");
+                            item.setWatched(!isChecked);
+                            switchWatched.setChecked(!isChecked);
+                            
+                            // 显示错误提示
+                            Toast.makeText(itemView.getContext(), 
+                                "更新观看状态失败，请重试", Toast.LENGTH_SHORT).show();
+                        });
+                });
             }
         }
         

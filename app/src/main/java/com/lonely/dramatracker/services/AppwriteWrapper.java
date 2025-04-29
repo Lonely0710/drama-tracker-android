@@ -506,4 +506,26 @@ public class AppwriteWrapper {
         
         return documentsRef.get();
     }
+
+    /**
+     * 更新观看状态
+     * @param userId 用户ID
+     * @param mediaId 媒体ID
+     * @param watchStatus 观看状态 true=已观看，false=未观看
+     * @param onSuccess 成功回调
+     * @param onError 失败回调
+     */
+    public static void updateWatchStatus(String userId, String mediaId, boolean watchStatus, Runnable onSuccess, Runnable onError) {
+        Appwrite.INSTANCE.updateWatchStatus(userId, mediaId, watchStatus, new Function1<Boolean, Unit>() {
+            @Override
+            public Unit invoke(Boolean success) {
+                if (success) {
+                    if (onSuccess != null) onSuccess.run();
+                } else {
+                    if (onError != null) onError.run();
+                }
+                return null;
+            }
+        });
+    }
 } 
