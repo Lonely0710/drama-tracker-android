@@ -192,16 +192,17 @@ public class RecordFragment extends BaseFragment {
                                     Object ratingDoubanObj = media.get("rating_douban");
                                     if (ratingDoubanObj != null && !"-1.0".equals(String.valueOf(ratingDoubanObj))) {
                                         String doubanRating = String.format("%.1f", Double.parseDouble(String.valueOf(ratingDoubanObj)));
-                                        ratingBuilder.append("豆瓣: ").append(doubanRating);
+                                        ratingBuilder.append(doubanRating);
                                     }
                                     
                                     Object ratingImdbObj = media.get("rating_imdb");
                                     if (ratingImdbObj != null && !"-1.0".equals(String.valueOf(ratingImdbObj))) {
+                                        // 如果已经有豆瓣评分，只添加IMDb评分
                                         if (ratingBuilder.length() > 0) {
                                             ratingBuilder.append(" / ");
                                         }
                                         String imdbRating = String.format("%.1f", Double.parseDouble(String.valueOf(ratingImdbObj)));
-                                        ratingBuilder.append("IMDb: ").append(imdbRating);
+                                        ratingBuilder.append(imdbRating);
                                     }
                                     
                                     if (ratingBuilder.length() > 0) {

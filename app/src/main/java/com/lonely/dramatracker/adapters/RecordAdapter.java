@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -72,6 +73,9 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
         SwitchMaterial switchWatched;
         // 列表模式下的额外字段
         TextView tvRating, tvType, tvYear, tvDuration;
+        // 评分图标
+        ImageView ivRatingIcon;
+        LinearLayout layoutRating;
         boolean isGridMode;
 
         ViewHolder(View itemView, boolean isGridMode) {
@@ -85,6 +89,8 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                 tvRating = itemView.findViewById(R.id.tv_rating);
                 tvYear = itemView.findViewById(R.id.tv_year);
                 switchWatched = itemView.findViewById(R.id.switch_watched);
+                layoutRating = itemView.findViewById(R.id.layout_rating);
+                ivRatingIcon = itemView.findViewById(R.id.iv_rating_icon);
             } else {
                 // 列表模式(item_record_list.xml)
                 tvTitle = itemView.findViewById(R.id.tv_title);
@@ -93,6 +99,8 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                 tvYear = itemView.findViewById(R.id.tv_year);
                 tvDuration = itemView.findViewById(R.id.tv_duration);
                 switchWatched = itemView.findViewById(R.id.switch_watched);
+                layoutRating = itemView.findViewById(R.id.layout_rating);
+                ivRatingIcon = itemView.findViewById(R.id.iv_rating_icon);
             }
         }
 
@@ -123,9 +131,42 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                         .into(ivPoster);
             }
             
-            // 设置评分
+            // 设置评分和对应图标
             if (tvRating != null && item.getRating() != null) {
                 tvRating.setText(item.getRating());
+                
+                // 根据媒体类型和评分格式显示对应图标
+                if (ivRatingIcon != null) {
+                    String mediaType = item.getMediaType();
+                    String rating = item.getRating();
+                    
+                    if ("anime".equals(mediaType)) {
+                        // 动漫类型统一使用Bangumi图标
+                        ivRatingIcon.setImageResource(R.drawable.ic_bangumi);
+                    } else {
+                        // 电影或电视剧类型
+                        if (rating.contains(" / ")) {
+                            // 有多个评分时,使用豆瓣图标(因为豆瓣评分在前)
+                            ivRatingIcon.setImageResource(R.drawable.ic_douban_green);
+                        } else if (rating.matches(".*\\d+\\.?\\d*/10.*")) {
+                            // IMDB格式: x/10
+                            ivRatingIcon.setImageResource(R.drawable.ic_imdb);
+                        } else {
+                            // 其他情况使用豆瓣图标
+                            ivRatingIcon.setImageResource(R.drawable.ic_douban_green);
+                        }
+                    }
+                }
+                
+                // 显示评分布局
+                if (layoutRating != null) {
+                    layoutRating.setVisibility(View.VISIBLE);
+                }
+            } else {
+                // 无评分时隐藏评分布局
+                if (layoutRating != null) {
+                    layoutRating.setVisibility(View.GONE);
+                }
             }
             
             // 设置年份/日期 - 根据视图类型选择不同格式
