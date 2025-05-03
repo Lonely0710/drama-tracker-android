@@ -16,4 +16,7 @@
     <dimen name="text_size_large">16sp</dimen>
     <dimen name="text_size_xlarge">18sp</dimen>
     <dimen name="text_size_xxlarge">20sp</dimen>
+    
+    <!-- 分页导航栏 -->
+    <dimen name="page_indicator_size">40dp</dimen>
 </resources> 

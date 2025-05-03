@@ -15,8 +15,19 @@ public interface SearchService {
         void onSearchComplete(String jsonResults);
     }
     
-    void search(String keyword, String type, SearchCallback callback);
-    void search(String keyword, String type, JsonSearchCallback callback);
+    // 回调接口用于获取总项目数
+    interface TotalItemsCallback {
+        void onTotalItemsResult(int count);
+    }
+    
+    // 添加 page 和 limit 参数
+    void search(String keyword, String type, int page, int limit, SearchCallback callback);
+    // 添加 page 和 limit 参数
+    void search(String keyword, String type, int page, int limit, JsonSearchCallback callback);
+    
+    // 获取总项目数的方法
+    void getTotalItems(String keyword, String type, TotalItemsCallback callback);
+    
     void addToCollection(SearchResult result);
     void addToCollection(SearchResult result, Runnable onSuccess);
     void addToCollection(SearchResult result, Runnable onSuccess, Runnable onFailure);

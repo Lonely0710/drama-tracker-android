@@ -9,6 +9,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -16,14 +18,40 @@ import com.lonely.dramatracker.R;
 import com.lonely.dramatracker.models.SearchResult;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.ViewHolder> {
-    private List<SearchResult> results = new ArrayList<>();
+public class SearchResultAdapter extends ListAdapter<SearchResult, SearchResultAdapter.ViewHolder> {
     private OnItemClickListener listener;
     private OnCollectClickListener collectListener;
+
+    // DiffUtil 回调实现
+    private static final DiffUtil.ItemCallback<SearchResult> DIFF_CALLBACK = 
+            new DiffUtil.ItemCallback<SearchResult>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull SearchResult oldItem, @NonNull SearchResult newItem) {
+            // 检查ID是否相同 - 这将决定是否是同一个项目
+            // 使用 sourceType 和 sourceId 的组合判断是否是同一项目
+            return oldItem.getSourceId() != null && 
+                   oldItem.getSourceId().equals(newItem.getSourceId()) &&
+                   oldItem.getSourceType() != null &&
+                   oldItem.getSourceType().equals(newItem.getSourceType());
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull SearchResult oldItem, @NonNull SearchResult newItem) {
+            // 检查所有相关内容是否相同，决定是否需要更新项目
+            return oldItem.equals(newItem) && 
+                   oldItem.isCollected() == newItem.isCollected();
+        }
+    };
+
+    // 构造函数
+    public SearchResultAdapter() {
+        super(DIFF_CALLBACK);
+    }
 
     public interface OnItemClickListener {
         void onItemClick(SearchResult result);
@@ -41,9 +69,9 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
         this.collectListener = listener;
     }
 
-    public void setResults(List<SearchResult> results) {
-        this.results = results;
-        notifyDataSetChanged();
+    // 获取当前列表数据的副本
+    public List<SearchResult> getCurrentList() {
+        return new ArrayList<>(super.getCurrentList());
     }
 
     @NonNull
@@ -56,7 +84,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        SearchResult result = results.get(position);
+        SearchResult result = getItem(position); // 使用 getItem() 替代 results.get()
         
         // 设置标题
         holder.tvTitleZh.setText(result.getTitleZh());
@@ -87,7 +115,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
             }
             
             // 设置完整日期(格式化为带括号的形式)
-            holder.tvReleaseDate.setText("(" + releaseDate + ")");
+            holder.tvReleaseDate.setText(releaseDate);
             holder.tvReleaseDate.setVisibility(View.VISIBLE);
         } else {
             holder.tvReleaseDate.setVisibility(View.GONE);
@@ -198,11 +226,6 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
                 // 不直接setCollected和notifyItemChanged，由外部刷新数据
             }
         });
-    }
-
-    @Override
-    public int getItemCount() {
-        return results.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

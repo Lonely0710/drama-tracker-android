@@ -13,7 +13,6 @@ import io.appwrite.models.Document;
 import io.appwrite.services.Databases;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -36,8 +35,25 @@ public class SearchServiceImpl implements SearchService {
     }
     
     @Override
-    public void search(String keyword, String type, SearchCallback callback) {
-        apiService.search(keyword, type).thenAccept(results -> {
+    public void getTotalItems(String keyword, String type, TotalItemsCallback callback) {
+        // 调用API获取总项目数
+        // 这里我们可以复用search方法，但设置一个小的pageSize以快速获取第一页
+        // 通常API会在响应中提供总数信息
+        apiService.getTotalCount(keyword, type).thenAccept(count -> {
+            callback.onTotalItemsResult(count);
+        }).exceptionally(throwable -> {
+            Log.e(TAG, "获取总项目数失败: " + throwable.getMessage(), throwable);
+            // 失败时返回0
+            callback.onTotalItemsResult(0);
+            return null;
+        });
+    }
+    
+    @Override
+    // 更新方法签名以包含 page 和 limit
+    public void search(String keyword, String type, int page, int limit, SearchCallback callback) {
+        // 将 page 和 limit 传递给 apiService
+        apiService.search(keyword, type, page, limit).thenAccept(results -> {
             // 检查每个结果的收藏状态
             for (SearchResult result : results) {
                 try {
@@ -58,8 +74,10 @@ public class SearchServiceImpl implements SearchService {
     }
     
     @Override
-    public void search(String keyword, String type, JsonSearchCallback callback) {
-        apiService.search(keyword, type).thenAccept(results -> {
+    // 更新方法签名以包含 page 和 limit
+    public void search(String keyword, String type, int page, int limit, JsonSearchCallback callback) {
+        // 将 page 和 limit 传递给 apiService
+        apiService.search(keyword, type, page, limit).thenAccept(results -> {
             // 检查每个结果的收藏状态
             for (SearchResult result : results) {
                 try {

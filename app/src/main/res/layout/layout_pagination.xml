@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp">
+
+    <!-- 加载进度条，默认隐藏 -->
+    <ProgressBar
+        android:id="@+id/pagination_loading"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <!-- 页码导航部分 - 水平布局 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+        
+        <!-- 上一页按钮 -->
+        <ImageButton
+            android:id="@+id/btn_prev_page"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_left"
+            android:contentDescription="上一页"
+            tools:ignore="TouchTargetSizeCheck" />
+    
+        <!-- 页码容器，使用HorizontalScrollView确保在页码多时可以滚动 -->
+        <HorizontalScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+    
+            <LinearLayout
+                android:id="@+id/page_number_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_gravity="center">
+    
+                <!-- 页码按钮会动态添加 -->
+    
+            </LinearLayout>
+        </HorizontalScrollView>
+    
+        <!-- 下一页按钮 -->
+        <ImageButton
+            android:id="@+id/btn_next_page"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_right"
+            android:contentDescription="下一页"
+            tools:ignore="TouchTargetSizeCheck" />
+    </LinearLayout>
+
+    <!-- 总页数显示 - 放在下方 -->
+    <TextView
+        android:id="@+id/tv_total_pages"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        tools:text="共 13 页"/>
+
+</LinearLayout> 

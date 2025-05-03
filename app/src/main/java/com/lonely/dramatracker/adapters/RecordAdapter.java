@@ -109,11 +109,12 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
             if (tvTitle != null) {
                 String title;
                 if (isGridMode) {
-                    // 网格模式：anime类型使用中文标题，其他类型使用原标题
-                    if ("anime".equals(item.getMediaType())) {
-                        title = item.getTitle(); // 动漫使用中文标题
+                    // 网格模式：优先使用原始标题(title_origin)，若为空则使用中文标题(title_zh)
+                    String originalTitle = item.getSubtitle();
+                    if (originalTitle != null && !originalTitle.trim().isEmpty()) {
+                        title = originalTitle; // 优先使用原始标题
                     } else {
-                        title = item.getSubtitle(); // 其他类型使用原标题
+                        title = item.getTitle(); // 原始标题为空时使用中文标题
                     }
                 } else {
                     // 列表模式始终使用中文标题

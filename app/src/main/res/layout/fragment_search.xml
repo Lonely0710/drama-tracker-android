@@ -88,6 +88,15 @@
         android:clipToPadding="false"
         android:paddingBottom="8dp" />
 
+    <!-- 分页导航栏 -->
+    <include
+        android:id="@+id/pagination_layout"
+        layout="@layout/layout_pagination"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
+
     <!-- 加载中提示 -->
     <FrameLayout
         android:id="@+id/loading_view"
