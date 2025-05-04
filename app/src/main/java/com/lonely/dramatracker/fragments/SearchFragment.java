@@ -23,6 +23,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.TextViewCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,6 +34,7 @@ import com.google.gson.reflect.TypeToken;
 import com.lonely.dramatracker.R;
 import com.lonely.dramatracker.adapters.SearchResultAdapter;
 import com.lonely.dramatracker.api.impl.ApiServiceImpl;
+import com.lonely.dramatracker.fragments.WebViewFragment;
 import com.lonely.dramatracker.models.SearchResult;
 import com.lonely.dramatracker.services.SearchService;
 import com.lonely.dramatracker.services.SearchService.JsonSearchCallback;
@@ -167,6 +171,14 @@ public class SearchFragment extends BaseFragment {
         adapter.setOnItemClickListener(result -> {
             if (resultClickListener != null) {
                 resultClickListener.onSearchResultClick(result);
+            }
+            
+            // 从搜索结果中获取sourceType和sourceId
+            String sourceType = result.getSourceType();
+            String sourceId = result.getSourceId();
+            
+            if (sourceType != null && sourceId != null && !sourceType.isEmpty() && !sourceId.isEmpty()) {
+                openWebViewWithSourceId(sourceType, sourceId);
             }
         });
         
@@ -701,5 +713,55 @@ public class SearchFragment extends BaseFragment {
                 }
             }
         });
+    }
+
+    private void openWebViewWithSourceId(String sourceType, String sourceId) {
+        String siteName;
+        String customUrl = null;
+        
+        // 根据sourceType确定对应的WebSite枚举值
+        switch (sourceType.toLowerCase()) {
+            case "douban":
+                siteName = "DOUBAN";
+                customUrl = "https://movie.douban.com/subject/" + sourceId + "/";
+                break;
+            case "imdb":
+                siteName = "IMDB";
+                customUrl = "https://www.imdb.com/title/" + sourceId + "/";
+                break;
+            case "bgm":
+                siteName = "BANGUMI";
+                customUrl = "https://bgm.tv/subject/" + sourceId;
+                break;
+            default:
+                // 未知类型，无法打开
+                Toast.makeText(requireContext(), "无法打开未知来源: " + sourceType, Toast.LENGTH_SHORT).show();
+                return;
+        }
+        
+        // 创建WebViewFragment并传递参数
+        WebViewFragment webViewFragment = new WebViewFragment();
+        Bundle args = new Bundle();
+        args.putString("site_name", siteName);
+        
+        // 如果有自定义URL，也传递过去
+        if (customUrl != null) {
+            args.putString("custom_url", customUrl);
+        }
+        
+        webViewFragment.setArguments(args);
+        
+        // 执行Fragment事务
+        FragmentManager fragmentManager = getParentFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.setCustomAnimations(
+            R.anim.fragment_slide_enter_right,
+            R.anim.fragment_slide_exit_left,
+            R.anim.fragment_slide_enter_left,
+            R.anim.fragment_slide_exit_right
+        );
+        transaction.replace(R.id.fragment_container, webViewFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 } 

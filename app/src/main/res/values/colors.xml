@@ -38,4 +38,13 @@
     <!-- 通用色 -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+
+    <!-- 分页和进度条相关颜色 -->
+    <color name="progress_start">#536DFE</color>
+    <color name="progress_end">#FF4081</color>
+    <color name="page_active_start">#64B5F6</color>
+    <color name="page_active_end">#2196F3</color>
+    
+    <!-- 网站标志颜色 -->
+    <color name="imdb_yellow">#F5C518</color>
 </resources>
