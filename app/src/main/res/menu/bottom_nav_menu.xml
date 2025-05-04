@@ -19,7 +19,7 @@
 
     <item
         android:id="@+id/navigation_recommend"
-        android:icon="@drawable/ic_star"
+        android:icon="@drawable/ic_recommend"
         android:title="@string/nav_recommend"/>
 
     <item

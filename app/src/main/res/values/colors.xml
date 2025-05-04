@@ -47,4 +47,6 @@
     
     <!-- 网站标志颜色 -->
     <color name="imdb_yellow">#F5C518</color>
+    <color name="douban_green">#00B51D</color>
+    <color name="bangumi_pink">#F06EA9</color>
 </resources>

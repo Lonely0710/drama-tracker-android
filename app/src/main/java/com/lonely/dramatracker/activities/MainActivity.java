@@ -11,6 +11,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.lonely.dramatracker.R;
+import com.lonely.dramatracker.fragments.AddDialogFragment;
 import com.lonely.dramatracker.fragments.HomeFragment;
 import com.lonely.dramatracker.fragments.RecordFragment;
 import com.lonely.dramatracker.fragments.RecommendFragment;
@@ -71,7 +72,9 @@ public class MainActivity extends BaseActivity {
         
         // 处理中间的添加按钮
         fabAdd.setOnClickListener(v -> {
-            // TODO: 处理添加按钮点击事件
+            // 显示添加对话框
+            AddDialogFragment dialogFragment = AddDialogFragment.newInstance();
+            dialogFragment.show(getSupportFragmentManager(), "AddDialogFragment");
         });
     }
     

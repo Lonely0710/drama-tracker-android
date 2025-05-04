@@ -182,4 +182,18 @@
         <item name="android:includeFontPadding">false</item>
         <item name="android:elevation">0dp</item>
     </style>
+
+    <!-- 对话框样式 -->
+    <style name="Dialog.FullWidth" parent="Theme.MaterialComponents.Light.Dialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+    </style>
+
+    <!-- 对话框动画样式 -->
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/dialog_slide_up</item>
+        <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
+    </style>
 </resources>
