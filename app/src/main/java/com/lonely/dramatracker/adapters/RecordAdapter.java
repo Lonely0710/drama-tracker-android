@@ -136,25 +136,29 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
             if (tvRating != null && item.getRating() != null) {
                 tvRating.setText(item.getRating());
                 
-                // 根据媒体类型和评分格式显示对应图标
+                // 根据媒体类型和评分格式显示对应图标和颜色
                 if (ivRatingIcon != null) {
                     String mediaType = item.getMediaType();
                     String rating = item.getRating();
                     
                     if ("anime".equals(mediaType)) {
-                        // 动漫类型统一使用Bangumi图标
+                        // 动漫类型统一使用Bangumi图标和颜色
                         ivRatingIcon.setImageResource(R.drawable.ic_bangumi);
+                        tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.bangumi_pink));
                     } else {
                         // 电影或电视剧类型
                         if (rating.contains(" / ")) {
                             // 有多个评分时,使用豆瓣图标(因为豆瓣评分在前)
                             ivRatingIcon.setImageResource(R.drawable.ic_douban_green);
+                            tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.douban_green));
                         } else if (rating.matches(".*\\d+\\.?\\d*/10.*")) {
                             // IMDB格式: x/10
                             ivRatingIcon.setImageResource(R.drawable.ic_imdb);
+                            tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.imdb_yellow));
                         } else {
                             // 其他情况使用豆瓣图标
                             ivRatingIcon.setImageResource(R.drawable.ic_douban_green);
+                            tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.douban_green));
                         }
                     }
                 }
