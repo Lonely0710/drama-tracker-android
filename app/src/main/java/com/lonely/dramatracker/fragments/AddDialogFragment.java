@@ -49,7 +49,9 @@ public class AddDialogFragment extends DialogFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setStyle(DialogFragment.STYLE_NO_TITLE, R.style.Dialog_FullWidth);
-        searchService = new QuickSearchService();
+        if (searchService == null) {
+            searchService = new QuickSearchService();
+        }
     }
     
     @Nullable
@@ -144,7 +146,7 @@ public class AddDialogFragment extends DialogFragment {
         showLoading(true);
         
         // 执行搜索
-        searchService.quickSearch(keyword).thenAcceptAsync(results -> {
+        searchService.searchFromMultipleSources(keyword).thenAcceptAsync(results -> {
             if (getActivity() == null || !isAdded()) return;
             
             getActivity().runOnUiThread(() -> {

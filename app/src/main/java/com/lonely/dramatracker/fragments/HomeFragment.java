@@ -1,6 +1,7 @@
 package com.lonely.dramatracker.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -15,7 +16,7 @@ import java.util.Random;
 public class HomeFragment extends BaseFragment {
     private LinearLayout ll_bangumi;
     private LinearLayout ll_douban;
-    private LinearLayout ll_imdb;
+    private LinearLayout ll_tmdb;
     private LinearLayout ll_collection;
     private LinearLayout movie_search_bar;
     private LinearLayout anime_search_bar;
@@ -37,7 +38,7 @@ public class HomeFragment extends BaseFragment {
         // 初始化视图
         ll_bangumi = view.findViewById(R.id.ll_bangumi);
         ll_douban = view.findViewById(R.id.ll_douban);
-        ll_imdb = view.findViewById(R.id.ll_imdb);
+        ll_tmdb = view.findViewById(R.id.ll_tmdb);
         ll_collection = view.findViewById(R.id.ll_collection);
         movie_search_bar = view.findViewById(R.id.movie_search_bar);
         anime_search_bar = view.findViewById(R.id.anime_search_bar);
@@ -50,7 +51,7 @@ public class HomeFragment extends BaseFragment {
         initContent();
     }
     
-    private void initContent() 
+    private void initContent() {
     }
 
     private void setupClickListeners() {
@@ -62,8 +63,8 @@ public class HomeFragment extends BaseFragment {
             animateButtonClick(v, () -> openWebView("DOUBAN"));
         });
         
-        ll_imdb.setOnClickListener(v -> {
-            animateButtonClick(v, () -> openWebView("IMDB"));
+        ll_tmdb.setOnClickListener(v -> {
+            animateButtonClick(v, () -> openWebView("TMDB"));
         });
         
         ll_collection.setOnClickListener(v -> {
@@ -96,7 +97,7 @@ public class HomeFragment extends BaseFragment {
         String randomId = generateRandomId(randomSite);
         
         // 构建完整URL
-        String fullUrl = buildFullUrl(randomSite, randomId);
+        String fullUrl = buildFullUrl(randomSite, randomId, null);
         
         // 跳转到WebViewFragment
         openWebViewWithUrl(randomSite, fullUrl);
@@ -113,9 +114,9 @@ public class HomeFragment extends BaseFragment {
                 // 豆瓣ID通常是7-8位数字
                 return String.valueOf(random.nextInt(90000000) + 10000000);
                 
-            case "IMDB":
-                // IMDb ID通常是"tt"开头加7-8位数字
-                return "tt" + String.format("%07d", random.nextInt(9999999) + 1);
+            case "TMDB":
+                // TMDb ID 通常是数字
+                return String.valueOf(random.nextInt(900000) + 1000);
                 
             case "BANGUMI":
                 // Bangumi ID通常是1-6位数字
@@ -128,14 +129,22 @@ public class HomeFragment extends BaseFragment {
     
     /**
      * 构建完整URL
+     * @param site 来源站点 ("DOUBAN", "TMDB", "BANGUMI")
+     * @param id 来源ID
+     * @param mediaType 媒体类型 ("movie", "tv", "anime")，对于TMDB是必需的
      */
-    private String buildFullUrl(String site, String id) {
+    private String buildFullUrl(String site, String id, String mediaType) {
         switch (site) {
             case "DOUBAN":
                 return "https://movie.douban.com/subject/" + id;
                 
-            case "IMDB":
-                return "https://www.imdb.com/title/" + id;
+            case "TMDB":
+                if (mediaType == null || mediaType.isEmpty() || id == null || id.isEmpty()) {
+                    Log.w("HomeFragment", "无法为TMDB构建URL，mediaType或ID缺失");
+                    return "https://www.themoviedb.org";
+                }
+                String typePath = "movie".equals(mediaType) ? "movie" : "tv"; 
+                return "https://www.themoviedb.org/" + typePath + "/" + id;
                 
             case "BANGUMI":
                 return "https://bgm.tv/subject/" + id;

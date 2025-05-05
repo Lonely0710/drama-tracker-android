@@ -301,6 +301,16 @@ public class SearchResult implements Parcelable {
         
         public Builder setReleaseDate(String releaseDate) {
             this.releaseDate = releaseDate;
+            // 同时尝试提取年份
+            if (releaseDate != null && releaseDate.length() >= 4) {
+                try {
+                   this.year = releaseDate.substring(0, 4);
+                } catch (Exception e) { 
+                    this.year = null; // 清除可能存在的旧年份
+                }
+            } else {
+                 this.year = null; // 清除可能存在的旧年份
+            }
             return this;
         }
         
@@ -308,7 +318,7 @@ public class SearchResult implements Parcelable {
             this.duration = duration;
             return this;
         }
-
+        
         public Builder setYear(String year) {
             this.year = year;
             return this;
@@ -318,18 +328,18 @@ public class SearchResult implements Parcelable {
             this.posterUrl = posterUrl;
             return this;
         }
-        
+
         public Builder setSummary(String summary) {
             this.summary = summary;
             return this;
         }
-        
+
         public Builder setStaff(String staff) {
             this.staff = staff;
             return this;
         }
-
-        // 评分setters
+        
+        // rating setters
         public Builder setRating(double rating) {
             this.rating = rating;
             return this;
@@ -349,13 +359,13 @@ public class SearchResult implements Parcelable {
             this.ratingBangumi = ratingBangumi;
             return this;
         }
-
-        // 状态setters
-        public Builder setCollected(boolean collected) {
-            isCollected = collected;
+        
+        // status setters
+        public Builder setIsCollected(boolean isCollected) {
+            this.isCollected = isCollected;
             return this;
         }
-
+        
         public Builder setCollectionId(String collectionId) {
             this.collectionId = collectionId;
             return this;

@@ -118,9 +118,7 @@
                         android:layout_height="40dp"
                         android:background="@drawable/bg_icon_circle"
                         android:padding="8dp"
-                        android:src="@drawable/ic_douban"
-                        app:tint="@color/primary"
-                        tools:ignore="UseAppTint" />
+                        android:src="@drawable/ic_douban_green"/>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -145,9 +143,9 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- IMDb -->
+                <!-- TMDb -->
                 <LinearLayout
-                    android:id="@+id/ll_imdb"
+                    android:id="@+id/ll_tmdb"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
@@ -162,8 +160,7 @@
                         android:layout_height="40dp"
                         android:background="@drawable/bg_icon_circle"
                         android:padding="8dp"
-                        android:src="@drawable/ic_imdb"
-                        app:tint="@color/primary" />
+                        android:src="@drawable/ic_tmdb"/>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -174,7 +171,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="IMDb"
+                            android:text="TMDb"
                             android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -205,8 +202,7 @@
                         android:layout_height="40dp"
                         android:background="@drawable/bg_icon_circle"
                         android:padding="8dp"
-                        android:src="@drawable/ic_bangumi"
-                        app:tint="@color/primary" />
+                        android:src="@drawable/ic_bangumi"/>
 
                     <LinearLayout
                         android:layout_width="wrap_content"

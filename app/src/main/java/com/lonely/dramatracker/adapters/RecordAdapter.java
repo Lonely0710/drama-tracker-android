@@ -153,8 +153,8 @@ public class RecordAdapter extends RecyclerView.Adapter<RecordAdapter.ViewHolder
                             tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.douban_green));
                         } else if (rating.matches(".*\\d+\\.?\\d*/10.*")) {
                             // IMDB格式: x/10
-                            ivRatingIcon.setImageResource(R.drawable.ic_imdb);
-                            tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.imdb_yellow));
+                            ivRatingIcon.setImageResource(R.drawable.ic_tmdb_16);
+                            tvRating.setTextColor(itemView.getContext().getResources().getColor(R.color.tmdb_green));
                         } else {
                             // 其他情况使用豆瓣图标
                             ivRatingIcon.setImageResource(R.drawable.ic_douban_green);

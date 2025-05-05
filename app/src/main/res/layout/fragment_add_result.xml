@@ -62,28 +62,28 @@
                 android:id="@+id/card_bangumi"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginTop="16dp"
                 android:visibility="gone"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                app:cardElevation="4dp">
 
                 <include
                     android:id="@+id/result_bangumi"
                     layout="@layout/item_add_result" />
             </androidx.cardview.widget.CardView>
 
-            <!-- IMDB结果卡片（预留） -->
+            <!-- TMDb Result -->
             <androidx.cardview.widget.CardView
-                android:id="@+id/card_imdb"
+                android:id="@+id/card_tmdb"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginTop="16dp"
                 android:visibility="gone"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                app:cardElevation="4dp">
 
                 <include
-                    android:id="@+id/result_imdb"
+                    android:id="@+id/result_tmdb"
                     layout="@layout/item_add_result" />
             </androidx.cardview.widget.CardView>
 

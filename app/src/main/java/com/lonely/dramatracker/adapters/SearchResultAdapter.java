@@ -170,12 +170,12 @@ public class SearchResultAdapter extends ListAdapter<SearchResult, SearchResultA
             holder.layoutRatingDouban.setVisibility(View.GONE);
         }
         
-        // IMDb评分
+        // TMDb评分
         if (result.getRatingImdb() > 0) {
-            holder.tvRatingImdb.setText(String.format("%.1f", result.getRatingImdb()));
-            holder.layoutRatingImdb.setVisibility(View.VISIBLE);
+            holder.tvRatingTmdb.setText(String.format("%.1f", result.getRatingImdb()));
+            holder.layoutRatingTmdb.setVisibility(View.VISIBLE);
         } else {
-            holder.layoutRatingImdb.setVisibility(View.GONE);
+            holder.layoutRatingTmdb.setVisibility(View.GONE);
         }
         
         // Bangumi评分
@@ -241,9 +241,9 @@ public class SearchResultAdapter extends ListAdapter<SearchResult, SearchResultA
         LinearLayout layoutRatingDouban;
         TextView tvRatingDouban;
         
-        // IMDb评分
-        LinearLayout layoutRatingImdb;
-        TextView tvRatingImdb;
+        // TMDb评分
+        LinearLayout layoutRatingTmdb;
+        TextView tvRatingTmdb;
         
         // Bangumi评分
         LinearLayout layoutRatingBangumi;
@@ -269,8 +269,8 @@ public class SearchResultAdapter extends ListAdapter<SearchResult, SearchResultA
             layoutRatingDouban = itemView.findViewById(R.id.layout_rating_douban);
             tvRatingDouban = itemView.findViewById(R.id.tv_rating_douban);
             
-            layoutRatingImdb = itemView.findViewById(R.id.layout_rating_imdb);
-            tvRatingImdb = itemView.findViewById(R.id.tv_rating_imdb);
+            layoutRatingTmdb = itemView.findViewById(R.id.layout_rating_tmdb);
+            tvRatingTmdb = itemView.findViewById(R.id.tv_rating_tmdb);
             
             layoutRatingBangumi = itemView.findViewById(R.id.layout_rating_bangumi);
             tvRatingBangumi = itemView.findViewById(R.id.tv_rating_bangumi);

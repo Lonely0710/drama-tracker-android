@@ -2,6 +2,7 @@ package com.lonely.dramatracker.fragments;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +40,7 @@ public class AddResultFragment extends Fragment {
     private static final String ARG_KEYWORD = "keyword";
     private static final String ARG_RESULT_DOUBAN = "result_douban";
     private static final String ARG_RESULT_BANGUMI = "result_bangumi";
-    private static final String ARG_RESULT_IMDB = "result_imdb";
+    private static final String ARG_RESULT_TMDB = "result_tmdb";
     
     private String keyword;
     private Map<String, SearchResult> searchResults = new HashMap<>();
@@ -48,7 +49,7 @@ public class AddResultFragment extends Fragment {
     private ImageView ivBack;
     private CardView cardDouban;
     private CardView cardBangumi;
-    private CardView cardImdb;
+    private CardView cardTmdb;
     private LinearLayout layoutNoResult;
     
     public static AddResultFragment newInstance(String keyword, Map<String, SearchResult> results) {
@@ -60,11 +61,11 @@ public class AddResultFragment extends Fragment {
         if (results.containsKey("douban")) {
             args.putParcelable(ARG_RESULT_DOUBAN, results.get("douban"));
         }
-        if (results.containsKey("bgm")) {
-            args.putParcelable(ARG_RESULT_BANGUMI, results.get("bgm"));
+        if (results.containsKey("bangumi")) {
+            args.putParcelable(ARG_RESULT_BANGUMI, results.get("bangumi"));
         }
-        if (results.containsKey("imdb")) {
-            args.putParcelable(ARG_RESULT_IMDB, results.get("imdb"));
+        if (results.containsKey("tmdb")) {
+            args.putParcelable(ARG_RESULT_TMDB, results.get("tmdb"));
         }
         
         fragment.setArguments(args);
@@ -82,16 +83,16 @@ public class AddResultFragment extends Fragment {
             // 获取搜索结果
             SearchResult doubanResult = getArguments().getParcelable(ARG_RESULT_DOUBAN);
             SearchResult bangumiResult = getArguments().getParcelable(ARG_RESULT_BANGUMI);
-            SearchResult imdbResult = getArguments().getParcelable(ARG_RESULT_IMDB);
+            SearchResult tmdbResult = getArguments().getParcelable(ARG_RESULT_TMDB);
             
             if (doubanResult != null) {
                 searchResults.put("douban", doubanResult);
             }
             if (bangumiResult != null) {
-                searchResults.put("bgm", bangumiResult);
+                searchResults.put("bangumi", bangumiResult);
             }
-            if (imdbResult != null) {
-                searchResults.put("imdb", imdbResult);
+            if (tmdbResult != null) {
+                searchResults.put("tmdb", tmdbResult);
             }
         }
     }
@@ -157,7 +158,7 @@ public class AddResultFragment extends Fragment {
         ivBack = view.findViewById(R.id.iv_back);
         cardDouban = view.findViewById(R.id.card_douban);
         cardBangumi = view.findViewById(R.id.card_bangumi);
-        cardImdb = view.findViewById(R.id.card_imdb);
+        cardTmdb = view.findViewById(R.id.card_tmdb);
         layoutNoResult = view.findViewById(R.id.layout_no_result);
     }
     
@@ -183,17 +184,17 @@ public class AddResultFragment extends Fragment {
         }
         
         // 显示Bangumi结果
-        if (searchResults.containsKey("bgm")) {
-            SearchResult result = searchResults.get("bgm");
+        if (searchResults.containsKey("bangumi")) {
+            SearchResult result = searchResults.get("bangumi");
             setupResultCard(cardBangumi, result, R.id.result_bangumi, "Bangumi", 
                     R.drawable.ic_bangumi, R.color.bangumi_pink);
         }
         
-        // 显示IMDb结果
-        if (searchResults.containsKey("imdb")) {
-            SearchResult result = searchResults.get("imdb");
-            setupResultCard(cardImdb, result, R.id.result_imdb, "IMDb", 
-                    R.drawable.ic_imdb, R.color.imdb_yellow);
+        // 显示TMDb结果
+        if (searchResults.containsKey("tmdb")) {
+            SearchResult result = searchResults.get("tmdb");
+            setupResultCard(cardTmdb, result, R.id.result_tmdb, "TMDb",
+                    R.drawable.ic_tmdb, R.color.tmdb_green);
         }
     }
     
@@ -260,17 +261,17 @@ public class AddResultFragment extends Fragment {
             case "douban":
                 rating = result.getRatingDouban();
                 break;
-            case "bgm":
+            case "bangumi":
                 rating = result.getRatingBangumi();
                 break;
-            case "imdb":
+            case "tmdb":
                 rating = result.getRatingImdb();
                 break;
             default:
                 rating = result.getRating();
         }
         
-        if (rating > 0) {
+        if (rating >= 0) {
             tvRating.setText(String.format("%.1f", rating));
             layoutRating.setVisibility(View.VISIBLE);
         } else {
@@ -321,8 +322,8 @@ public class AddResultFragment extends Fragment {
         
         // 设置查看详情按钮
         btnView.setOnClickListener(v -> {
-            // 跳转到原页面
-            openWebViewWithSourceId(result.getSourceType(), result.getSourceId());
+            // 跳转到原页面，传递媒体类型
+            openWebViewWithSourceId(result.getSourceType(), result.getSourceId(), result.getMediaType());
         });
     }
     
@@ -356,22 +357,36 @@ public class AddResultFragment extends Fragment {
     
     /**
      * 打开WebView显示源网站详情页
-     * @param sourceType 来源类型（douban/imdb/bgm）
+     * @param sourceType 来源类型（douban/tmdb/bangumi）
      * @param sourceId 来源ID
+     * @param mediaType 媒体类型（movie/tv/anime）, TMDb需要
      */
-    private void openWebViewWithSourceId(String sourceType, String sourceId) {
-        String siteName;
+    private void openWebViewWithSourceId(String sourceType, String sourceId, String mediaType) {
+        String siteName = "";
         String customUrl = null;
         
-        // 根据sourceType确定对应的WebSite枚举值
+        if (sourceType == null || sourceId == null) {
+             Toast.makeText(requireContext(), "无法打开详情页 (来源或ID缺失)", Toast.LENGTH_SHORT).show();
+             return;
+        }
+        
+        // 根据sourceType确定对应的WebSite枚举值或构建URL
         switch (sourceType.toLowerCase()) {
             case "douban":
                 siteName = "DOUBAN";
                 customUrl = "https://movie.douban.com/subject/" + sourceId + "/";
                 break;
-            case "imdb":
-                siteName = "IMDB";
-                customUrl = "https://www.imdb.com/title/" + sourceId + "/";
+            case "tmdb": // 处理 tmdb
+                siteName = "TMDB";
+                if (mediaType != null && !mediaType.isEmpty()) {
+                    // 根据 mediaType 区分 movie 和 tv
+                    String typePath = "movie".equals(mediaType) ? "movie" : "tv"; 
+                    customUrl = "https://www.themoviedb.org/" + typePath + "/" + sourceId;
+                } else {
+                    // 如果 mediaType 未知，提供一个通用搜索链接或主页链接
+                    Log.w("AddResultFragment", "无法确定TMDB的mediaType，无法构建精确URL for ID: " + sourceId);
+                    customUrl = "https://www.themoviedb.org/"; // 或搜索链接
+                }
                 break;
             case "bgm":
                 siteName = "BANGUMI";
@@ -381,6 +396,11 @@ public class AddResultFragment extends Fragment {
                 // 未知类型，无法打开
                 Toast.makeText(requireContext(), "无法打开未知来源: " + sourceType, Toast.LENGTH_SHORT).show();
                 return;
+        }
+        
+        if (customUrl == null) {
+            Toast.makeText(requireContext(), "无法构建详情页URL", Toast.LENGTH_SHORT).show();
+            return;
         }
         
         // 创建WebViewFragment并传递参数

@@ -3,7 +3,7 @@ package com.lonely.dramatracker.models;
 public enum WebSite {
     BANGUMI("Bangumi", "https://bgm.tv"),
     DOUBAN("豆瓣电影", "https://movie.douban.com"),
-    IMDB("IMDb", "https://www.imdb.com");
+    TMDB("TMDb", "https://www.themoviedb.org");
 
     private final String name;
     private final String url;

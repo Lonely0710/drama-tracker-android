@@ -25,6 +25,10 @@ object AppConfig {
     lateinit var COLLECTION_MEDIA_ID: String
     lateinit var COLLECTION_MEDIA_SOURCE_ID: String
     
+    // TMDB API配置
+    lateinit var TMDB_API_TOKEN: String
+    lateinit var TMDB_API_KEY: String
+    
     // 为Java代码提供静态引用
     @JvmField
     var DATABASE_ID_STATIC: String = ""
@@ -40,6 +44,12 @@ object AppConfig {
     
     @JvmField
     var COLLECTION_MEDIA_SOURCE_ID_STATIC: String = ""
+    
+    @JvmField
+    var TMDB_API_TOKEN_STATIC: String = ""
+    
+    @JvmField
+    var TMDB_API_KEY_STATIC: String = ""
     
     /**
      * 初始化配置
@@ -72,12 +82,20 @@ object AppConfig {
             COLLECTION_MEDIA_SOURCE_ID = properties.getProperty("APPWRITE_COLLECTION_MEDIA_SOURCE_ID")
                 ?: throw RuntimeException("APPWRITE_COLLECTION_MEDIA_SOURCE_ID not found in config")
             
+            // 读取TMDB API配置
+            TMDB_API_TOKEN = properties.getProperty("TMDB_API_TOKEN")
+                ?: throw RuntimeException("TMDB_API_TOKEN not found in config")
+            TMDB_API_KEY = properties.getProperty("TMDB_API_KEY")
+                ?: throw RuntimeException("TMDB_API_KEY not found in config")
+            
             // 为Java静态字段赋值
             DATABASE_ID_STATIC = DATABASE_ID
             COLLECTION_USERS_ID_STATIC = COLLECTION_USERS_ID
             COLLECTION_COLLECTIONS_ID_STATIC = COLLECTION_COLLECTIONS_ID
             COLLECTION_MEDIA_ID_STATIC = COLLECTION_MEDIA_ID
             COLLECTION_MEDIA_SOURCE_ID_STATIC = COLLECTION_MEDIA_SOURCE_ID
+            TMDB_API_TOKEN_STATIC = TMDB_API_TOKEN
+            TMDB_API_KEY_STATIC = TMDB_API_KEY
             
             Log.d(TAG, "配置加载成功")
         } catch (e: Exception) {

@@ -216,8 +216,8 @@ public class WebViewFragment extends Fragment {
             case "DOUBAN":
                 ivSiteLogo.setImageResource(R.drawable.ic_web_douban);
                 break;
-            case "IMDB":
-                ivSiteLogo.setImageResource(R.drawable.ic_web_imdb);
+            case "TMDB":
+                ivSiteLogo.setImageResource(R.drawable.ic_web_tmdb);
                 break;
             default:
                 // 默认情况下显示文本标题

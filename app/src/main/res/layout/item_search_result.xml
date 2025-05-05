@@ -129,7 +129,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="12dp"
                 android:visibility="gone"
                 tools:visibility="visible">
 
@@ -150,24 +150,24 @@
                     tools:text="8.7" />
             </LinearLayout>
 
-            <!-- IMDb评分 -->
+            <!-- TMDb评分 -->
             <LinearLayout
-                android:id="@+id/layout_rating_imdb"
+                android:id="@+id/layout_rating_tmdb"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="12dp"
                 android:visibility="gone"
                 tools:visibility="visible">
 
                 <ImageView
                     android:layout_width="18dp"
                     android:layout_height="18dp"
-                    android:src="@drawable/ic_imdb" />
+                    android:src="@drawable/ic_tmdb_32" />
 
                 <TextView
-                    android:id="@+id/tv_rating_imdb"
+                    android:id="@+id/tv_rating_tmdb"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="3dp"
