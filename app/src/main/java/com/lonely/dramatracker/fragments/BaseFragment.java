@@ -16,6 +16,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
 import com.lonely.dramatracker.R;
+import com.lonely.dramatracker.utils.AnimationUtils;
 
 public abstract class BaseFragment extends Fragment {
     
@@ -104,5 +105,24 @@ public abstract class BaseFragment extends Fragment {
                 Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show()
             );
         }
+    }
+    
+    /**
+     * 按钮点击动画并执行操作
+     * 
+     * @param view 需要添加动画的视图（按钮）
+     * @param action 动画结束后需要执行的操作
+     */
+    protected void animateButtonClick(View view, Runnable action) {
+        AnimationUtils.playButtonClickAnimation(view, action);
+    }
+    
+    /**
+     * 只有按钮点击动画，无后续操作
+     * 
+     * @param view 需要添加动画的视图（按钮）
+     */
+    protected void animateButtonClick(View view) {
+        AnimationUtils.playButtonClickAnimation(view);
     }
 }
