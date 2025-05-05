@@ -50,8 +50,7 @@ public class HomeFragment extends BaseFragment {
         initContent();
     }
     
-    private void initContent() {
-        // TODO: 初始化首页内容，如热门推荐等
+    private void initContent() 
     }
 
     private void setupClickListeners() {
