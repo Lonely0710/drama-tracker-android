@@ -1,15 +1,24 @@
 package com.lonely.dramatracker.models;
 
 public class MediaInfo {
+    // 常量定义
+    public static final String TYPE_MOVIE = "movie";
+    public static final String TYPE_TV = "tv";
+    public static final String TYPE_ANIME = "anime";
+    
+    private long id; // 内部ID，用于高分内容排名
+    private int rank; // 排名，用于展示
     private String documentId; // Appwrite document ID
     private String mediaType; // movie/tv/anime
     private String titleZh;
     private String titleOriginal;
     private String releaseDate;
+    private String year; // 年份
     private String duration;
     private double ratingDouban;
     private double ratingImdb;
     private double ratingBangumi;
+    private float rating; // 通用评分字段，用于高分推荐
     private String posterUrl;
     private String summary;
     private String staff;
@@ -19,6 +28,30 @@ public class MediaInfo {
         this.ratingDouban = -1;
         this.ratingImdb = -1;
         this.ratingBangumi = -1;
+        this.rating = -1f;
+    }
+    
+    // 获取媒体名称（优先返回中文标题）
+    public String getMediaName() {
+        return titleZh != null && !titleZh.isEmpty() ? titleZh : titleOriginal;
+    }
+    
+    // ID相关
+    public long getId() {
+        return id;
+    }
+    
+    public void setId(long id) {
+        this.id = id;
+    }
+    
+    // 排名相关
+    public int getRank() {
+        return rank;
+    }
+    
+    public void setRank(int rank) {
+        this.rank = rank;
     }
 
     // Getters and Setters
@@ -61,6 +94,14 @@ public class MediaInfo {
     public void setReleaseDate(String releaseDate) {
         this.releaseDate = releaseDate;
     }
+    
+    public String getYear() {
+        return year;
+    }
+    
+    public void setYear(String year) {
+        this.year = year;
+    }
 
     public String getDuration() {
         return duration;
@@ -92,6 +133,14 @@ public class MediaInfo {
 
     public void setRatingBangumi(double ratingBangumi) {
         this.ratingBangumi = ratingBangumi;
+    }
+    
+    public float getRating() {
+        return rating;
+    }
+    
+    public void setRating(float rating) {
+        this.rating = rating;
     }
 
     public String getPosterUrl() {

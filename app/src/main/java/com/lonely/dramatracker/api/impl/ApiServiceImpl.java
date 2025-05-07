@@ -20,15 +20,13 @@ public class ApiServiceImpl implements ApiService {
     private final BangumiCrawler bangumiCrawler;
     private final DoubanCrawler doubanCrawler;
     private final TMDbCrawler tmdbCrawler;
-    // 调整缓存，键现在包含分页信息以避免混淆，或者仅缓存原始未分页列表
-    // 暂时简化，移除复杂的分页缓存，仅缓存原始搜索调用结果
     private final CacheManager<String, List<SearchResult>> searchResultCache = new CacheManager<>(60 * 5); // 5分钟缓存原始结果
     private final CacheManager<String, Integer> totalCountCache = new CacheManager<>(60 * 5); // 5分钟缓存总数
 
     public ApiServiceImpl() {
-        this.bangumiCrawler = new BangumiCrawler();
         this.doubanCrawler = new DoubanCrawler();
-        this.tmdbCrawler = new TMDbCrawler();
+        this.bangumiCrawler = new BangumiCrawler();
+        this.tmdbCrawler = TMDbCrawler.getInstance();
     }
     
     @Override

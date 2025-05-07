@@ -28,7 +28,7 @@ public class QuickSearchService {
     public QuickSearchService() {
         this.doubanCrawler = new DoubanCrawler();
         this.bangumiCrawler = new BangumiCrawler();
-        this.tmdbCrawler = new TMDbCrawler();
+        this.tmdbCrawler = TMDbCrawler.getInstance();
     }
     
     /**

@@ -219,6 +219,9 @@ public class WebViewFragment extends Fragment {
             case "TMDB":
                 ivSiteLogo.setImageResource(R.drawable.ic_web_tmdb);
                 break;
+            case "MAOYAN":
+                ivSiteLogo.setImageResource(R.drawable.ic_web_maoyan);
+                break;
             default:
                 // 默认情况下显示文本标题
                 ivSiteLogo.setVisibility(View.GONE);
@@ -314,5 +317,20 @@ public class WebViewFragment extends Fragment {
 
     public String getCurrentSite() {
         return currentSite;
+    }
+    
+    /**
+     * 加载新URL的方法
+     * @param url 要加载的URL
+     */
+    public void loadUrl(String url) {
+        if (webView != null && url != null && !url.isEmpty()) {
+            // 重置进度条
+            progressBar.setVisibility(View.VISIBLE);
+            currentProgress = 0;
+            
+            // 加载新URL
+            webView.loadUrl(url);
+        }
     }
 }

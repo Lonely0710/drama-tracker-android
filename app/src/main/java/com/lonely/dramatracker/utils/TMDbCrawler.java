@@ -1,7 +1,9 @@
 package com.lonely.dramatracker.utils;
 
 import android.util.Log;
+import android.util.Pair;
 import com.lonely.dramatracker.config.AppConfig;
+import com.lonely.dramatracker.models.MediaInfo;
 import com.lonely.dramatracker.models.SearchResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,6 +27,182 @@ public class TMDbCrawler {
     private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
     // 从AppConfig获取API Key
     private static final String API_KEY = AppConfig.TMDB_API_KEY_STATIC;
+    
+    private static TMDbCrawler instance;
+    
+    private TMDbCrawler() {
+        // 私有构造函数
+    }
+    
+    public static synchronized TMDbCrawler getInstance() {
+        if (instance == null) {
+            instance = new TMDbCrawler();
+        }
+        return instance;
+    }
+
+    /**
+     * 获取高分电影列表
+     * @param page 页码（从1开始）
+     * @return 包含电影列表和总页数的Pair
+     */
+    public CompletableFuture<Pair<List<MediaInfo>, Integer>> getTopRatedMovies(int page) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // 构建获取高分电影的URL
+                String url = BASE_URL + "/movie/top_rated?api_key=" + API_KEY + "&language=zh-CN&page=" + page;
+                
+                String jsonResponse = CrawlerUtils.httpGet(url);
+                return parseMediaList(jsonResponse, MediaInfo.TYPE_MOVIE);
+            } catch (Exception e) {
+                Log.e(TAG, "获取高分电影失败", e);
+                throw new RuntimeException("获取高分电影失败", e);
+            }
+        });
+    }
+    
+    /**
+     * 获取高分电视剧列表
+     * @param page 页码（从1开始）
+     * @return 包含电视剧列表和总页数的Pair
+     */
+    public CompletableFuture<Pair<List<MediaInfo>, Integer>> getTopRatedTVShows(int page) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // 构建获取高分电视剧的URL
+                String url = BASE_URL + "/tv/top_rated?api_key=" + API_KEY + "&language=zh-CN&page=" + page;
+                
+                String jsonResponse = CrawlerUtils.httpGet(url);
+                return parseMediaList(jsonResponse, MediaInfo.TYPE_TV);
+            } catch (Exception e) {
+                Log.e(TAG, "获取高分电视剧失败", e);
+                throw new RuntimeException("获取高分电视剧失败", e);
+            }
+        });
+    }
+    
+    /**
+     * 解析媒体列表JSON数据
+     * @return 包含媒体列表和总页数的Pair
+     */
+    private Pair<List<MediaInfo>, Integer> parseMediaList(String jsonData, String mediaType) throws Exception {
+        List<MediaInfo> mediaList = new ArrayList<>();
+        
+        JSONObject jsonObject = new JSONObject(jsonData);
+        JSONArray results = jsonObject.getJSONArray("results");
+        
+        // 解析总页数
+        int totalPages = jsonObject.optInt("total_pages", 1);
+        
+        // 遍历结果数组
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject item = results.getJSONObject(i);
+            MediaInfo media = convertToMediaInfo(item, mediaType, i + 1);
+            mediaList.add(media);
+        }
+        
+        return new Pair<>(mediaList, totalPages);
+    }
+    
+    /**
+     * 将JSON对象转换为MediaInfo对象
+     */
+    private MediaInfo convertToMediaInfo(JSONObject json, String mediaType, int rank) throws Exception {
+        MediaInfo mediaInfo = new MediaInfo();
+        
+        // 获取TMDb ID
+        int tmdbId = json.optInt("id", 0);
+        
+        // 设置排名（用于全部类别显示）
+        mediaInfo.setRank(rank);
+        mediaInfo.setId(tmdbId);
+        
+        // 设置媒体类型
+        mediaInfo.setMediaType(mediaType);
+        
+        // 设置标题（根据不同媒体类型获取不同字段）
+        if (mediaType.equals(MediaInfo.TYPE_MOVIE)) {
+            mediaInfo.setTitleZh(json.optString("title"));
+            mediaInfo.setTitleOriginal(json.optString("original_title"));
+        } else {
+            mediaInfo.setTitleZh(json.optString("name"));
+            mediaInfo.setTitleOriginal(json.optString("original_name"));
+        }
+        
+        // 设置评分（TMDb的评分范围是0-10）
+        double voteAverage = json.optDouble("vote_average");
+        mediaInfo.setRating((float) voteAverage);
+        
+        // 设置发布日期
+        if (mediaType.equals(MediaInfo.TYPE_MOVIE)) {
+            mediaInfo.setReleaseDate(json.optString("release_date"));
+        } else {
+            mediaInfo.setReleaseDate(json.optString("first_air_date"));
+        }
+        
+        // 提取年份信息
+        String releaseDate = mediaInfo.getReleaseDate();
+        if (releaseDate != null && releaseDate.length() >= 4) {
+            mediaInfo.setYear(releaseDate.substring(0, 4));
+        }
+        
+        // 设置海报URL
+        String posterPath = json.optString("poster_path");
+        if (posterPath != null && !posterPath.isEmpty()) {
+            mediaInfo.setPosterUrl(IMAGE_BASE_URL + posterPath);
+        }
+        
+        // 设置简介
+        mediaInfo.setSummary(json.optString("overview"));
+        
+        return mediaInfo;
+    }
+    
+    /**
+     * 获取高分电影和电视剧的混合列表（用于"全部"分类）
+     * @param moviePage 电影页码
+     * @param tvPage 电视剧页码
+     * @return 包含混合列表和总页数的Pair
+     */
+    public CompletableFuture<Pair<List<MediaInfo>, Integer>> getTopRatedAll(int moviePage, int tvPage) {
+        CompletableFuture<Pair<List<MediaInfo>, Integer>> moviesFuture = getTopRatedMovies(moviePage);
+        CompletableFuture<Pair<List<MediaInfo>, Integer>> tvShowsFuture = getTopRatedTVShows(tvPage);
+        
+        return CompletableFuture.allOf(moviesFuture, tvShowsFuture)
+                .thenApply(v -> {
+                    try {
+                        Pair<List<MediaInfo>, Integer> moviesResult = moviesFuture.get();
+                        Pair<List<MediaInfo>, Integer> tvShowsResult = tvShowsFuture.get();
+                        
+                        List<MediaInfo> movies = moviesResult.first;
+                        List<MediaInfo> tvShows = tvShowsResult.first;
+                        
+                        int totalMoviesPages = moviesResult.second;
+                        int totalTVShowsPages = tvShowsResult.second;
+                        
+                        // 合并两个列表并按评分排序
+                        List<MediaInfo> combined = new ArrayList<>();
+                        combined.addAll(movies);
+                        combined.addAll(tvShows);
+                        
+                        // 按评分降序排序
+                        combined.sort((a, b) -> Float.compare(b.getRating(), a.getRating()));
+                        
+                        // 重新设置排名
+                        for (int i = 0; i < combined.size(); i++) {
+                            combined.get(i).setRank(i + 1);
+                        }
+                        
+                        // 取两个分类中页数较多的作为总页数
+                        int maxTotalPages = Math.max(totalMoviesPages, totalTVShowsPages);
+                        
+                        return new Pair<>(combined, maxTotalPages);
+                    } catch (Exception e) {
+                        Log.e(TAG, "合并高分内容失败", e);
+                        return new Pair<>(new ArrayList<>(), 1);
+                    }
+                });
+    }
 
     /**
      * 使用TMDb API搜索电影和电视剧

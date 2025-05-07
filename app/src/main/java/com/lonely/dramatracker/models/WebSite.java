@@ -1,8 +1,13 @@
 package com.lonely.dramatracker.models;
 
+/**
+ * 网站枚举
+ */
 public enum WebSite {
+    DOUBAN("豆瓣", "https://m.douban.com"),
+    IMDB("IMDb", "https://www.imdb.com"),
     BANGUMI("Bangumi", "https://bgm.tv"),
-    DOUBAN("豆瓣电影", "https://movie.douban.com"),
+    MAOYAN("猫眼", "https://m.maoyan.com"),
     TMDB("TMDb", "https://www.themoviedb.org");
 
     private final String name;

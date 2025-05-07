@@ -45,6 +45,12 @@ dependencies {
     implementation("com.google.android.material:material:1.5.0")
     implementation("com.airbnb.android:lottie:6.3.0")
     
+    // ViewPager2库
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
+    
+    // OkHttp网络请求库
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    
     // Appwrite SDK
     implementation("io.appwrite:sdk-for-android:5.1.0")
     

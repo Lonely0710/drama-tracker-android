@@ -30,6 +30,7 @@
         <item name="tabTextColor">@color/text_secondary</item>
         <item name="tabSelectedTextColor">@color/primary</item>
         <item name="tabIndicatorColor">@color/primary</item>
+        <item name="tabIconTint">@color/tab_icon_color</item>
         <item name="tabIndicatorFullWidth">false</item>
         <item name="tabIndicatorHeight">3dp</item>
         <item name="tabTextAppearance">@style/TextAppearance.DramaTracker.Tab</item>
@@ -37,6 +38,8 @@
         <item name="tabRippleColor">@android:color/transparent</item>
         <item name="tabMinWidth">80dp</item>
         <item name="tabGravity">center</item>
+        <item name="android:background">@drawable/bg_tab_layout</item>
+        <item name="android:padding">2dp</item>
     </style>
 
     <!-- Tab text style -->
@@ -161,12 +164,19 @@
 
     <!-- 标签样式 -->
     <style name="Widget.DramaTracker.Chip" parent="Widget.Material3.Chip.Filter">
-        <item name="chipBackgroundColor">@color/surface</item>
-        <item name="chipStrokeColor">@color/primary</item>
-        <item name="chipStrokeWidth">1dp</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="chipMinHeight">32dp</item>
+        <item name="chipBackgroundColor">@color/chip_background_color</item>
+        <item name="android:textColor">@color/chip_text_color</item>
+        <item name="chipMinHeight">36dp</item>
         <item name="android:textSize">14sp</item>
+        <item name="chipIconTint">@color/chip_text_color</item>
+        <item name="android:textAppearance">@style/TextAppearance.DramaTracker.Body2</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeColor">@color/primary</item>
+        <item name="chipCornerRadius">18dp</item>
+        <item name="checkedIconVisible">true</item>
+        <item name="checkedIcon">@drawable/ic_check_small</item>
+        <item name="android:textStyle">bold</item>
+        <item name="rippleColor">@color/primary</item>
     </style>
 
     <!-- 底部导航文本样式 -->

@@ -49,4 +49,12 @@
     <color name="tmdb_green">#0D243F</color>
     <color name="douban_green">#00B51D</color>
     <color name="bangumi_pink">#F06EA9</color>
+    <color name="maoyan_red">#FF4D64</color>
+    
+    <!-- Tab图标颜色选择器引用 -->
+    <color name="tab_icon_color">@color/tab_icon_color_selector</color>
+    
+    <!-- Chip选择器颜色 -->
+    <color name="chip_background_color">@color/chip_background_selector</color>
+    <color name="chip_text_color">@color/chip_text_color_selector</color>
 </resources>

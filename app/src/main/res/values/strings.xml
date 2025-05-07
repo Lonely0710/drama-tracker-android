@@ -34,4 +34,22 @@
     <string name="settings_data">数据管理</string>
     <string name="settings_help">帮助与反馈</string>
     <string name="settings_about">关于我们</string>
+    
+    <!-- 推荐页 -->
+    <string name="no_summary">暂无简介</string>
+    <string name="empty_recommend">暂无推荐内容</string>
+    <string name="load_failed">加载失败，请重试</string>
+    <string name="tab_recent">近期上映</string>
+    <string name="tab_daily">每日放送</string>
+    <string name="tab_top_rated">高分推荐</string>
+    
+    <!-- 高分推荐页 -->
+    <string name="top_rated_all">全部</string>
+    <string name="top_rated_movies">电影</string>
+    <string name="top_rated_tv">电视剧</string>
+    <string name="top_rated_loading">正在加载高分内容…</string>
+    <string name="top_rated_empty">暂无高分内容</string>
+    <string name="top_rated_movie_type">电影</string>
+    <string name="top_rated_tv_type">剧集</string>
+    <string name="load_more_failed">加载更多失败，请稍后再试</string>
 </resources>
