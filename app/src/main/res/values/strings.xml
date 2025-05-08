@@ -52,4 +52,5 @@
     <string name="top_rated_movie_type">电影</string>
     <string name="top_rated_tv_type">剧集</string>
     <string name="load_more_failed">加载更多失败，请稍后再试</string>
+    <string name="is_last_page">已经是最后一页</string>
 </resources>

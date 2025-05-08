@@ -109,8 +109,6 @@
                     android:textSize="0sp"
                     android:scaleX="0.8"
                     android:scaleY="0.8"
-                    app:thumbTint="@color/switch_thumb_color"
-                    app:trackTint="@color/switch_track_color"
                     tools:ignore="TouchTargetSizeCheck" />
             </LinearLayout>
 

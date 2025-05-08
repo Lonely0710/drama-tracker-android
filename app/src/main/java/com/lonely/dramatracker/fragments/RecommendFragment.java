@@ -49,12 +49,15 @@ public class RecommendFragment extends BaseFragment {
                 switch (position) {
                     case RecommendPagerAdapter.TAB_RECENT:
                         tab.setText("近期上映");
+                        tab.setIcon(R.drawable.ic_rmd_movie);
                         break;
                     case RecommendPagerAdapter.TAB_DAILY:
                         tab.setText("每日放送");
+                        tab.setIcon(R.drawable.ic_bangumi);
                         break;
                     case RecommendPagerAdapter.TAB_TOP_RATED:
                         tab.setText("高分推荐");
+                        tab.setIcon(R.drawable.ic_rmd_points);
                         break;
                 }
             }

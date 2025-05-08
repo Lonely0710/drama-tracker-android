@@ -28,6 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
+                android:textStyle="bold"
                 android:text="全部" />
 
             <com.google.android.material.chip.Chip
@@ -35,6 +36,7 @@
                 style="@style/Widget.DramaTracker.Chip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textStyle="bold"
                 android:text="电影" />
 
             <com.google.android.material.chip.Chip
@@ -42,6 +44,7 @@
                 style="@style/Widget.DramaTracker.Chip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textStyle="bold"
                 android:text="电视剧" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>

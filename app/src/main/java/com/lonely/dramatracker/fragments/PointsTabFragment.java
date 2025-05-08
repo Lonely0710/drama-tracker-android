@@ -1,16 +1,11 @@
 package com.lonely.dramatracker.fragments;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.util.Pair;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -19,7 +14,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -31,19 +25,21 @@ import com.google.android.material.chip.ChipGroup;
 import com.lonely.dramatracker.R;
 import com.lonely.dramatracker.adapters.PointsAdapter;
 import com.lonely.dramatracker.models.MediaInfo;
-import com.lonely.dramatracker.models.WebSite;
+import com.lonely.dramatracker.utils.PaginationHelper;
 import com.lonely.dramatracker.utils.TMDbCrawler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 高分推荐标签页的Fragment
  */
-public class PointsTabFragment extends Fragment {
+public class PointsTabFragment extends Fragment implements 
+        PaginationHelper.OnPageLoadListener,
+        PaginationHelper.CategoryProvider, 
+        PaginationHelper.EmptyStateChecker {
     private static final String TAG = "PointsTabFragment";
 
     // 内容类型常量
@@ -52,34 +48,24 @@ public class PointsTabFragment extends Fragment {
     public static final int TYPE_TV = 2;
     
     // 每页数据条数
-    private static final int PAGE_SIZE = 39;
-    // 最多显示的页码按钮数
-    private static final int MAX_PAGE_BUTTONS = 5;
-    
-    // --- 分页相关状态变量 ---
-    private boolean isLoading = false; // 是否正在加载数据
-    private boolean isLoadingMore = false; // 是否正在加载更多
-    private boolean isInitialLoading = false; // 是否初始加载
-    private boolean isLastPage = false; // 是否已加载到最后一页
-    private boolean isPageOperation = false; // 是否是页码操作触发的加载
-    
-    // 当前页码和总页数
-    private int currentMoviePage = 1;
-    private int currentTVPage = 1;
-    private int totalMoviesPages = 1;
-    private int totalTVPages = 1;
-    
-    // 当前显示的页码和总页数
-    private int currentPage = 1;
-    private int totalPages = 1;
-    private int totalItems = 0;
-    // --- 分页相关状态变量结束 ---
+    private static final int PAGE_SIZE = 21; // 修改为21，使页面展示更合理
+    private static final int API_PAGE_SIZE = 20; // API每次返回20条数据
     
     // --- 缓存相关变量 ---
     // 分别缓存电影和电视剧的每一页数据
     private Map<Integer, List<MediaInfo>> moviePageCache = new HashMap<>();
     private Map<Integer, List<MediaInfo>> tvPageCache = new HashMap<>();
     private Map<Integer, List<MediaInfo>> allPageCache = new HashMap<>();
+    
+    // API临时数据缓存
+    private List<MediaInfo> moviesTempCache = new ArrayList<>();
+    private List<MediaInfo> tvTempCache = new ArrayList<>();
+    private List<MediaInfo> allTempCache = new ArrayList<>();
+    
+    // 标记是否已无法从API获取更多数据
+    private boolean noMoreApiDataForMovies = false;
+    private boolean noMoreApiDataForTv = false;
+    private boolean noMoreApiDataForAll = false;
     // --- 缓存相关变量结束 ---
 
     // 视图组件
@@ -113,6 +99,9 @@ public class PointsTabFragment extends Fragment {
 
     // 添加Handler
     private Handler handler = new Handler();
+    
+    // 分页助手
+    private PaginationHelper paginationHelper;
 
     @Nullable
     @Override
@@ -124,11 +113,15 @@ public class PointsTabFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
+        // 初始化分页助手 - 3种内容类型：全部、电影、电视剧
+        paginationHelper = new PaginationHelper(requireContext(), 3);
+        paginationHelper.setOnPageLoadListener(this);
+        
         // 初始化视图
         initViews(view);
         
         // 立即显示加载动画，给用户更好的视觉反馈
-        showInitialLoadingAnimation();
+        paginationHelper.showInitialLoadingAnimation();
         
         // 设置事件监听
         setupListeners();
@@ -140,10 +133,7 @@ public class PointsTabFragment extends Fragment {
         tmdbCrawler = TMDbCrawler.getInstance();
         
         // 使用Handler延迟执行加载数据，确保动画能够显示
-        handler.post(() -> {
-            // 加载数据
-            loadData();
-        });
+        handler.post(this::initializePageInfo);
     }
     
     /**
@@ -174,124 +164,366 @@ public class PointsTabFragment extends Fragment {
             tvTotalPages = paginationLayout.findViewById(R.id.tv_total_pages);
             paginationLoading = paginationLayout.findViewById(R.id.pagination_loading);
             
-            // 默认隐藏分页导航 - 数据加载后会显示
-            paginationLayout.setVisibility(View.GONE);
-            
-            // 设置上一页/下一页按钮点击事件
-            setupPaginationButtons();
+            // 将视图组件传递给分页助手
+            paginationHelper.setupViews(
+                paginationLayout,
+                pageNumberContainer,
+                btnPrevPage,
+                btnNextPage,
+                tvTotalPages,
+                paginationLoading,
+                progressBar,
+                rvPointsContent,
+                tvEmpty
+            );
         }
     }
     
     /**
-     * 设置事件监听器
+     * 初始化页面信息 - 先获取各分类的总页数
      */
-    private void setupListeners() {
-        // 筛选Chip组监听
-        chipGroupFilter.setOnCheckedChangeListener((group, checkedId) -> {
-            // 先拦截掉其他所有操作，显示加载动画
-            showInitialLoadingAnimation();
-            
-            // 重置分页状态
-            resetPaginationState();
-            
-            // 确保页面滚动到顶部
-            scrollToTop();
-            
-            // 使用Handler延迟执行，确保先渲染加载动画
-            handler.postDelayed(() -> {
-                if (checkedId == R.id.chip_all) {
-                    currentType = TYPE_ALL;
-                    adapter.setCurrentType(TYPE_ALL);
-                    
-                    // 设置当前页码和总页数
-                    currentPage = 1;
-                    // 取两者中较大的页数作为总页数
-                    totalPages = Math.max(totalMoviesPages, totalTVPages);
-                    if (totalPages <= 0) totalPages = 1;
-                    
-                    // 直接加载第一页数据，确保所有类别使用相同的分页加载模式
-                    loadMediaData(currentType, 1);
-                    
-                    // 调试日志
-                    Log.d(TAG, "切换到全部类型 - 总页数: " + totalPages);
-                } else if (checkedId == R.id.chip_movies) {
-                    currentType = TYPE_MOVIES;
-                    adapter.setCurrentType(TYPE_MOVIES);
-                    
-                    // 设置当前页码和总页数
-                    currentPage = 1;
-                    totalPages = totalMoviesPages;
-                    if (totalPages <= 0) totalPages = 1;
-                    
-                    // 直接加载第一页数据，确保所有类别使用相同的分页加载模式
-                    loadMediaData(currentType, 1);
-                    
-                    // 调试日志
-                    Log.d(TAG, "切换到电影类型 - 总页数: " + totalPages);
-                } else if (checkedId == R.id.chip_tv) {
-                    currentType = TYPE_TV;
-                    adapter.setCurrentType(TYPE_TV);
-                    
-                    // 设置当前页码和总页数
-                    currentPage = 1;
-                    totalPages = totalTVPages;
-                    if (totalPages <= 0) totalPages = 1;
-                    
-                    // 直接加载第一页数据，确保所有类别使用相同的分页加载模式
-                    loadMediaData(currentType, 1);
-                    
-                    // 调试日志
-                    Log.d(TAG, "切换到电视剧类型 - 总页数: " + totalPages);
-                }
-            }, 200);
-        });
-        
-        // 添加滚动监听 - 不再需要自动加载更多，改为纯粹的页码导航
-        rvPointsContent.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                // 页码分页模式不需要滚动监听自动加载
-                // 仅保留基本的滚动处理
-                super.onScrolled(recyclerView, dx, dy);
-            }
-        });
-    }
-    
-    /**
-     * 初始化适配器
-     */
-    private void initAdapter() {
-        adapter = new PointsAdapter(getContext());
-        adapter.setCurrentType(TYPE_ALL);
-        rvPointsContent.setAdapter(adapter);
-        
-        // 确保GridLayoutManager已经设置
-        if (!(rvPointsContent.getLayoutManager() instanceof GridLayoutManager)) {
-            rvPointsContent.setLayoutManager(new GridLayoutManager(getContext(), 3));
-        }
-        
-        // 设置点击监听器
-        adapter.setOnItemClickListener((position, item) -> {
-            // 点击高分内容项打开TMDb详情页
-            openTMDbDetail(item);
-        });
-    }
-    
-    /**
-     * 加载高分推荐数据
-     */
-    private void loadData() {
-        // 重置分页状态
-        resetPaginationState();
-        
+    private void initializePageInfo() {
         // 显示加载状态
-        showLoading(true);
+        paginationHelper.showLoading(true);
         
-        // 重置页码
-        currentMoviePage = 1;
-        currentTVPage = 1;
-        currentPage = 1;
+        // 清空所有缓存数据
+        clearAllData();
         
+        // 1. 获取电影分类的总页数和第一页数据
+        tmdbCrawler.getTopRatedMovies(1).thenAccept(movieResult -> {
+            if (getActivity() == null || !isAdded()) return;
+            
+            // 保存电影第一页数据
+            List<MediaInfo> firstPageMovies = movieResult.first;
+            int totalMoviePages = movieResult.second;
+            
+            // 重新计算页数，API每页20条，我们每页21条
+            int adjustedMoviePages = calculateAdjustedPages(totalMoviePages);
+            
+            // 缓存第一页数据
+            if (firstPageMovies != null && !firstPageMovies.isEmpty()) {
+                // 所有电影数据添加到总集合
+                moviesList.addAll(firstPageMovies);
+                
+                // 缓存到临时集合以供分页使用
+                moviesTempCache.addAll(firstPageMovies);
+                
+                // 如果不满21条，需要加载下一页补充
+                if (firstPageMovies.size() < PAGE_SIZE) {
+                    // 继续加载下一页电影数据
+                    loadMoreMovieData(2);
+                } else {
+                    // 足够显示第一页，直接处理分页
+                    processMoviePageData();
+                }
+            }
+            
+            // 2. 获取电视剧分类的总页数和第一页数据
+            tmdbCrawler.getTopRatedTVShows(1).thenAccept(tvResult -> {
+                if (getActivity() == null || !isAdded()) return;
+                
+                // 保存电视剧第一页数据
+                List<MediaInfo> firstPageTvShows = tvResult.first;
+                int totalTvPages = tvResult.second;
+                
+                // 重新计算页数，API每页20条，我们每页21条
+                int adjustedTvPages = calculateAdjustedPages(totalTvPages);
+                
+                // 缓存第一页数据
+                if (firstPageTvShows != null && !firstPageTvShows.isEmpty()) {
+                    // 所有电视剧数据添加到总集合
+                    tvList.addAll(firstPageTvShows);
+                    
+                    // 缓存到临时集合以供分页使用
+                    tvTempCache.addAll(firstPageTvShows);
+                    
+                    // 如果不满21条，需要加载下一页补充
+                    if (firstPageTvShows.size() < PAGE_SIZE) {
+                        // 继续加载下一页电视剧数据
+                        loadMoreTvData(2);
+                    } else {
+                        // 足够显示第一页，直接处理分页
+                        processTvPageData();
+                    }
+                }
+                
+                // 3. 合并电影和电视剧数据，作为"全部"分类
+                if (getActivity() == null || !isAdded()) return;
+                
+                // 合并数据
+                mergeAllMediaData();
+                
+                // 更新UI (在主线程)
+                getActivity().runOnUiThread(() -> {
+                    // 更新分页信息 - 使用调整后的页数
+                    updatePaginationInfo(
+                            calculateAdjustedAllPages(), 
+                            adjustedMoviePages, 
+                            adjustedTvPages);
+                    
+                    // 显示当前类型的第一页数据
+                    displayCurrentCategoryFirstPage();
+                    
+                    // 预加载其他分类第二页数据
+                    preloadSecondPageData(adjustedMoviePages, adjustedTvPages);
+                });
+            }).exceptionally(e -> {
+                handleLoadError(e);
+                return null;
+            });
+        }).exceptionally(e -> {
+            handleLoadError(e);
+            return null;
+        });
+    }
+    
+    /**
+     * 根据API返回的总页数计算调整后的页数
+     * API每页返回20条，我们每页显示21条
+     */
+    private int calculateAdjustedPages(int apiTotalPages) {
+        if (apiTotalPages <= 0) return 1;
+        
+        // 计算总条目数
+        int totalItems = apiTotalPages * API_PAGE_SIZE;
+        
+        // 根据显示的每页条数计算页数
+        return (int) Math.ceil((double) totalItems / PAGE_SIZE);
+    }
+    
+    /**
+     * 计算"全部"分类的总页数
+     */
+    private int calculateAdjustedAllPages() {
+        // 取电影和电视剧总数据量的总和
+        int totalItems = moviesList.size() + tvList.size();
+        
+        // 根据显示的每页条数计算页数
+        return (int) Math.ceil((double) totalItems / PAGE_SIZE);
+    }
+    
+    /**
+     * 加载更多电影数据
+     */
+    private void loadMoreMovieData(int apiPage) {
+        if (noMoreApiDataForMovies) {
+            // 已经没有更多电影数据，直接处理现有数据
+            processMoviePageData();
+            return;
+        }
+        
+        tmdbCrawler.getTopRatedMovies(apiPage).thenAccept(result -> {
+            if (getActivity() == null || !isAdded()) return;
+            
+            List<MediaInfo> movies = result.first;
+            
+            if (movies == null || movies.isEmpty()) {
+                // 没有更多数据
+                noMoreApiDataForMovies = true;
+            } else {
+                // 添加到总数据集
+                moviesList.addAll(movies);
+                
+                // 添加到临时缓存
+                moviesTempCache.addAll(movies);
+                
+                // 如果临时缓存还不够一页
+                if (moviesTempCache.size() < PAGE_SIZE && !noMoreApiDataForMovies) {
+                    // 继续加载下一页
+                    loadMoreMovieData(apiPage + 1);
+                    return;
+                }
+            }
+            
+            // 处理电影分页数据
+            processMoviePageData();
+            
+            // 更新"全部"分类数据
+            mergeAllMediaData();
+        }).exceptionally(e -> {
+            if (isAdded()) {
+                getActivity().runOnUiThread(() -> handleLoadError(e));
+            }
+            return null;
+        });
+    }
+    
+    /**
+     * 加载更多电视剧数据
+     */
+    private void loadMoreTvData(int apiPage) {
+        if (noMoreApiDataForTv) {
+            // 已经没有更多电视剧数据，直接处理现有数据
+            processTvPageData();
+            return;
+        }
+        
+        tmdbCrawler.getTopRatedTVShows(apiPage).thenAccept(result -> {
+            if (getActivity() == null || !isAdded()) return;
+            
+            List<MediaInfo> tvShows = result.first;
+            
+            if (tvShows == null || tvShows.isEmpty()) {
+                // 没有更多数据
+                noMoreApiDataForTv = true;
+        } else {
+                // 添加到总数据集
+                tvList.addAll(tvShows);
+                
+                // 添加到临时缓存
+                tvTempCache.addAll(tvShows);
+                
+                // 如果临时缓存还不够一页
+                if (tvTempCache.size() < PAGE_SIZE && !noMoreApiDataForTv) {
+                    // 继续加载下一页
+                    loadMoreTvData(apiPage + 1);
+                    return;
+                }
+            }
+            
+            // 处理电视剧分页数据
+            processTvPageData();
+            
+            // 更新"全部"分类数据
+            mergeAllMediaData();
+        }).exceptionally(e -> {
+            if (isAdded()) {
+                getActivity().runOnUiThread(() -> handleLoadError(e));
+            }
+            return null;
+        });
+    }
+    
+    /**
+     * 处理电影分页数据
+     */
+    private void processMoviePageData() {
+        // 清空已有缓存
+        moviePageCache.clear();
+        
+        // 按每页PAGE_SIZE条分页
+        int totalPages = (int) Math.ceil((double) moviesList.size() / PAGE_SIZE);
+        
+        for (int i = 0; i < totalPages; i++) {
+            int fromIndex = i * PAGE_SIZE;
+            int toIndex = Math.min(fromIndex + PAGE_SIZE, moviesList.size());
+            
+            // 创建当前页数据
+            List<MediaInfo> pageData = new ArrayList<>(moviesList.subList(fromIndex, toIndex));
+            
+            // 缓存当前页
+            moviePageCache.put(i + 1, pageData);
+        }
+        
+        // 清空临时缓存
+        moviesTempCache.clear();
+        
+        // 如果当前类型是电影，更新UI
+        if (currentType == TYPE_MOVIES && isAdded() && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                // 更新分页信息
+                paginationHelper.setTotalPages(totalPages);
+                // 显示当前页数据
+                if (moviePageCache.containsKey(1)) {
+                    adapter.setCurrentType(TYPE_MOVIES);
+                    adapter.setItems(moviePageCache.get(1));
+                }
+                // 更新UI
+                paginationHelper.showLoading(false);
+                paginationHelper.updatePaginationUI();
+            });
+        }
+    }
+    
+    /**
+     * 处理电视剧分页数据
+     */
+    private void processTvPageData() {
+        // 清空已有缓存
+        tvPageCache.clear();
+        
+        // 按每页PAGE_SIZE条分页
+        int totalPages = (int) Math.ceil((double) tvList.size() / PAGE_SIZE);
+        
+        for (int i = 0; i < totalPages; i++) {
+            int fromIndex = i * PAGE_SIZE;
+            int toIndex = Math.min(fromIndex + PAGE_SIZE, tvList.size());
+            
+            // 创建当前页数据
+            List<MediaInfo> pageData = new ArrayList<>(tvList.subList(fromIndex, toIndex));
+            
+            // 缓存当前页
+            tvPageCache.put(i + 1, pageData);
+        }
+        
+        // 清空临时缓存
+        tvTempCache.clear();
+        
+        // 如果当前类型是电视剧，更新UI
+        if (currentType == TYPE_TV && isAdded() && getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                // 更新分页信息
+                paginationHelper.setTotalPages(totalPages);
+                // 显示当前页数据
+                if (tvPageCache.containsKey(1)) {
+                    adapter.setCurrentType(TYPE_TV);
+                    adapter.setItems(tvPageCache.get(1));
+                }
+                // 更新UI
+                paginationHelper.showLoading(false);
+                paginationHelper.updatePaginationUI();
+            });
+        }
+    }
+    
+    /**
+     * 合并电影和电视剧数据，作为"全部"分类
+     */
+    private void mergeAllMediaData() {
+        // 清空已有数据
+        allMediaList.clear();
+        allPageCache.clear();
+        
+        // 合并电影和电视剧数据
+        // 这里可以实现按评分排序，先简单合并
+        allMediaList.addAll(moviesList);
+        allMediaList.addAll(tvList);
+        
+        // 按每页PAGE_SIZE条分页
+        int totalPages = (int) Math.ceil((double) allMediaList.size() / PAGE_SIZE);
+        
+        for (int i = 0; i < totalPages; i++) {
+            int fromIndex = i * PAGE_SIZE;
+            int toIndex = Math.min(fromIndex + PAGE_SIZE, allMediaList.size());
+            
+            // 创建当前页数据
+            List<MediaInfo> pageData = new ArrayList<>(allMediaList.subList(fromIndex, toIndex));
+            
+            // 缓存当前页
+            allPageCache.put(i + 1, pageData);
+        }
+        
+        // 如果当前类型是全部，更新UI
+        if (currentType == TYPE_ALL && isAdded() && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                // 更新分页信息
+                paginationHelper.setTotalPages(totalPages);
+                // 显示当前页数据
+                if (allPageCache.containsKey(1)) {
+                    adapter.setCurrentType(TYPE_ALL);
+                    adapter.setItems(allPageCache.get(1));
+                }
+                // 更新UI
+                paginationHelper.showLoading(false);
+                paginationHelper.updatePaginationUI();
+            });
+        }
+    }
+    
+    /**
+     * 清空所有数据和缓存
+     */
+    private void clearAllData() {
         // 清空现有数据
         allMediaList.clear();
         moviesList.clear();
@@ -302,21 +534,173 @@ public class PointsTabFragment extends Fragment {
         tvPageCache.clear();
         allPageCache.clear();
         
-        // 标记为初始加载状态
-        isInitialLoading = true;
+        // 清空临时缓存
+        moviesTempCache.clear();
+        tvTempCache.clear();
+        allTempCache.clear();
         
-        // 根据当前选择的类型加载第一页数据
-        loadMediaData(currentType, 1);
+        // 重置分页状态
+        paginationHelper.resetPaginationState();
+        
+        // 重置API数据标记
+        noMoreApiDataForMovies = false;
+        noMoreApiDataForTv = false;
+        noMoreApiDataForAll = false;
     }
     
     /**
-     * 加载下一页数据
+     * 更新分页信息
      */
-    private void loadNextPage() {
-        if (isLoading || isLastPage) return;
+    private void updatePaginationInfo(int totalAllPages, int totalMoviePages, int totalTvPages) {
+        // 直接设置所有分类的总页数
+        paginationHelper.setTotalPagesForAllCategories(totalAllPages, totalMoviePages, totalTvPages);
+    }
+    
+    /**
+     * 显示当前类型的第一页数据
+     */
+    private void displayCurrentCategoryFirstPage() {
+        // 隐藏加载动画
+        paginationHelper.showLoading(false);
         
-        int nextPage = currentPage + 1;
-        loadMediaData(currentType, nextPage);
+        List<MediaInfo> firstPageData = null;
+        
+        // 根据当前选择的类型显示对应数据
+        if (currentType == TYPE_ALL) {
+            firstPageData = allPageCache.get(1);
+        } else if (currentType == TYPE_MOVIES) {
+            firstPageData = moviePageCache.get(1);
+        } else if (currentType == TYPE_TV) {
+            firstPageData = tvPageCache.get(1);
+        }
+        
+        if (firstPageData != null && !firstPageData.isEmpty()) {
+            // 设置当前页为1
+            paginationHelper.setCurrentPage(1);
+            
+            // 更新适配器内容
+            adapter.setCurrentType(currentType);
+            adapter.setItems(firstPageData);
+        } else {
+            // 显示空状态
+            paginationHelper.showEmptyState();
+        }
+        
+        // 确保分页UI更新
+        paginationHelper.updatePaginationUI();
+    }
+    
+    /**
+     * 预加载第二页数据
+     */
+    private void preloadSecondPageData(int totalMoviePages, int totalTvPages) {
+        // 电影和电视剧数据已经在初始化阶段提前加载，不需要再加载
+        // 此方法保留以兼容现有代码结构
+    }
+    
+    /**
+     * 设置事件监听器
+     */
+    private void setupListeners() {
+        // 筛选Chip组监听
+        chipGroupFilter.setOnCheckedChangeListener((group, checkedId) -> {
+            // 先拦截掉其他所有操作，显示加载动画
+            paginationHelper.showInitialLoadingAnimation();
+            
+            // 确保页面滚动到顶部
+            paginationHelper.scrollToTop();
+            
+            // 使用Handler延迟执行，确保先渲染加载动画
+            handler.postDelayed(() -> {
+                if (checkedId == R.id.chip_all) {
+                    currentType = TYPE_ALL;
+                    paginationHelper.switchCategory(TYPE_ALL);
+                    // 显示已缓存的第1页数据
+                    displayCachedPage(TYPE_ALL, 1);
+                } else if (checkedId == R.id.chip_movies) {
+                    currentType = TYPE_MOVIES;
+                    paginationHelper.switchCategory(TYPE_MOVIES);
+                    // 显示已缓存的第1页数据
+                    displayCachedPage(TYPE_MOVIES, 1);
+                } else if (checkedId == R.id.chip_tv) {
+                    currentType = TYPE_TV;
+                    paginationHelper.switchCategory(TYPE_TV);
+                    // 显示已缓存的第1页数据
+                    displayCachedPage(TYPE_TV, 1);
+                }
+            }, 200);
+        });
+    }
+    
+    /**
+     * 显示已缓存的页面，如果不存在则加载
+     */
+    private void displayCachedPage(int contentType, int page) {
+        Map<Integer, List<MediaInfo>> currentCache;
+        
+        if (contentType == TYPE_MOVIES) {
+            currentCache = moviePageCache;
+        } else if (contentType == TYPE_TV) {
+            currentCache = tvPageCache;
+            } else {
+            currentCache = allPageCache;
+        }
+        
+        if (currentCache.containsKey(page)) {
+            // 直接显示缓存的数据
+            List<MediaInfo> cachedData = currentCache.get(page);
+            adapter.setCurrentType(contentType);
+            adapter.setItems(cachedData);
+            
+            // 更新分页UI
+            paginationHelper.setCurrentPage(page);
+            paginationHelper.showLoading(false);
+            paginationHelper.updatePaginationUI();
+            } else {
+            // 如果没有缓存，加载对应页面
+            loadMediaData(contentType, page);
+        }
+    }
+    
+    /**
+     * PaginationHelper.OnPageLoadListener的实现
+     * 当用户点击分页控件时触发
+     */
+    @Override
+    public void onLoadPage(int category, int page) {
+        // 优先尝试从缓存加载
+        displayCachedPage(category, page);
+    }
+    
+    /**
+     * PaginationHelper.CategoryProvider的实现
+     * 提供当前分类给分页助手
+     */
+    @Override
+    public int getCurrentCategory() {
+        return currentType;
+    }
+    
+    /**
+     * PaginationHelper.EmptyStateChecker的实现
+     * 检查当前分类是否为空
+     */
+    @Override
+    public boolean isCurrentCategoryEmpty() {
+        boolean isEmpty = false;
+        switch (currentType) {
+            case TYPE_ALL:
+                isEmpty = allMediaList.isEmpty();
+                break;
+            case TYPE_MOVIES:
+                isEmpty = moviesList.isEmpty();
+                break;
+            case TYPE_TV:
+                isEmpty = tvList.isEmpty();
+                break;
+        }
+        
+        return isEmpty;
     }
     
     /**
@@ -326,437 +710,56 @@ public class PointsTabFragment extends Fragment {
      */
     private void loadMediaData(int contentType, int page) {
         // 确认page是有效的
-        if (page < 1 || (totalPages > 0 && page > totalPages && isLastPage)) {
+        if (page < 1) {
             return;
         }
         
         // 设置加载状态
-        isLoading = true;
-        isPageOperation = true;
+        paginationHelper.showLoading(true);
         
-        // 记录当前页码
-        currentPage = page;
+        // 从缓存中获取数据
+        Map<Integer, List<MediaInfo>> currentCache;
         
-        // 判断是否是初始加载还是加载更多
-        boolean isFirstPage = (page == 1);
-        isLoadingMore = !isFirstPage;
-        
-        // 调试日志
-        Log.d(TAG, String.format("加载数据 - 类型: %d, 页码: %d, 首页?: %b",
-                contentType, page, isFirstPage));
-        
-        // 设置适当的加载提示
-        if (isFirstPage) {
-            // 首页加载，显示全屏加载
-            showLoading(true);
-            if (paginationLayout != null) {
-                paginationLayout.setVisibility(View.GONE);
-            }
+        if (contentType == TYPE_MOVIES) {
+            currentCache = moviePageCache;
+        } else if (contentType == TYPE_TV) {
+            currentCache = tvPageCache;
         } else {
-            // 非首页加载，显示页面加载动画
-            showPageLoading(true);
+            currentCache = allPageCache;
         }
         
-        // 根据内容类型选择不同的加载策略
-        switch (contentType) {
-            case TYPE_MOVIES:
-                loadMoviesData(page);
-                break;
-            case TYPE_TV:
-                loadTVData(page);
-                break;
-            case TYPE_ALL:
-            default:
-                loadAllData(page);
-                break;
-        }
-    }
-    
-    /**
-     * 显示页面加载动画
-     */
-    private void showPageLoading(boolean isLoading) {
-        if (paginationLoading != null) {
-            paginationLoading.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-            // 确保分页加载动画显示在最前面
-            if (isLoading) paginationLoading.bringToFront();
-        }
-        
-        if (isLoading) {
-            // 显示过渡动画
-            rvPointsContent.setAlpha(0.6f);
-            // 禁用RecyclerView的点击和滚动
-            rvPointsContent.setEnabled(false);
-            
-            // 禁用分页按钮
-            if (btnPrevPage != null) btnPrevPage.setEnabled(false);
-            if (btnNextPage != null) btnNextPage.setEnabled(false);
-            
-            // 显示加载动画
-            if (progressBar != null) {
-                progressBar.setVisibility(View.VISIBLE);
-                progressBar.bringToFront(); // 确保显示在最前面
-                progressBar.setLayoutParams(new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER
-                ));
-            }
-            
-            // 确保在加载过程中分页导航可见（如果已添加到界面）
-            if (paginationLayout != null) {
-                paginationLayout.setVisibility(View.VISIBLE);
-                paginationLayout.setAlpha(0.6f); // 半透明效果
-            }
-        } else {
-            // 恢复正常显示
-            rvPointsContent.setAlpha(1.0f);
-            rvPointsContent.setEnabled(true);
-            
-            // 隐藏加载动画
-            if (progressBar != null) {
-                progressBar.setVisibility(View.GONE);
-            }
-            
-            // 恢复分页导航透明度
-            if (paginationLayout != null) {
-                paginationLayout.setAlpha(1.0f);
-            }
-            
-            // 根据当前页码恢复分页按钮状态
-            updatePaginationUI();
-        }
-    }
-    
-    /**
-     * 加载所有类型混合内容
-     */
-    private void loadAllData(int page) {
-        // 检查缓存
-        if (allPageCache.containsKey(page)) {
-            // 使用缓存数据
-            List<MediaInfo> cachedData = allPageCache.get(page);
-            handleAllDataResult(cachedData, page, totalPages);
-            return;
-        }
-        
-        // 同步电影和电视剧的页码
-        currentMoviePage = page;
-        currentTVPage = page;
-        
-        // 获取混合内容
-        CompletableFuture<Pair<List<MediaInfo>, Integer>> allFuture = 
-                tmdbCrawler.getTopRatedAll(currentMoviePage, currentTVPage);
-        
-        allFuture.thenAccept(result -> {
-            if (getActivity() == null) return;
-            
-            try {
-                List<MediaInfo> mediaList = result.first;
-                int totalPages = result.second;
-                
-                // 更新总页数
-                totalMoviesPages = Math.max(totalMoviesPages, totalPages);
-                totalTVPages = Math.max(totalTVPages, totalPages);
-                
-                // 将结果缓存
-                allPageCache.put(page, mediaList);
-                
-                // 处理结果
-                getActivity().runOnUiThread(() -> {
-                    handleAllDataResult(mediaList, page, totalPages);
-                });
-            } catch (Exception e) {
-                handleLoadError(e);
-            }
-        }).exceptionally(this::handleLoadException);
-    }
-    
-    /**
-     * 处理全部类型数据加载结果
-     */
-    private void handleAllDataResult(List<MediaInfo> mediaList, int page, int totalPagesCount) {
-        // 更新总页数
-        this.totalPages = totalPagesCount;
-        
-        if (mediaList == null || mediaList.isEmpty()) {
-            if (page == 1) {
-                // 第一页没有数据，显示空状态
-                showEmptyState();
+        if (currentCache.containsKey(page)) {
+            // 从缓存加载
+            List<MediaInfo> cachedData = currentCache.get(page);
+            if (cachedData != null && !cachedData.isEmpty()) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // 更新UI
+                        adapter.setCurrentType(contentType);
+                        adapter.setItems(cachedData);
+                        paginationHelper.setCurrentPage(page);
+                        paginationHelper.showLoading(false);
+                        paginationHelper.updatePaginationUI();
+                    });
+                }
             } else {
-                // 后续页没有数据，标记为最后一页
-                isLastPage = true;
+                paginationHelper.showEmptyState();
+            }
+        } else {
+            // 已经没有更多数据
+            if (contentType == TYPE_MOVIES && page > moviePageCache.size()) {
+                paginationHelper.setLastPage(true);
+                paginationHelper.showLoading(false);
+                Toast.makeText(getContext(), "已经是最后一页", Toast.LENGTH_SHORT).show();
+            } else if (contentType == TYPE_TV && page > tvPageCache.size()) {
+                paginationHelper.setLastPage(true);
+                paginationHelper.showLoading(false);
+                Toast.makeText(getContext(), "已经是最后一页", Toast.LENGTH_SHORT).show();
+            } else if (contentType == TYPE_ALL && page > allPageCache.size()) {
+                paginationHelper.setLastPage(true);
+                paginationHelper.showLoading(false);
                 Toast.makeText(getContext(), "已经是最后一页", Toast.LENGTH_SHORT).show();
             }
-        } else {
-            // 每页独立展示，不再累加
-            // 保存到缓存中对应的页
-            allPageCache.put(page, mediaList);
-            
-            // 如果是第一页，同时更新总列表（用于计数）
-            if (page == 1) {
-                allMediaList.clear();
-                allMediaList.addAll(mediaList);
-            } else {
-                // 非第一页也需要更新总列表，确保计数准确
-                if (allMediaList.isEmpty()) {
-                    allMediaList.addAll(mediaList);
-                }
-            }
-            
-            // 判断是否到达最后一页
-            if (mediaList.size() < PAGE_SIZE) {
-                isLastPage = true;
-            }
-            
-            // 更新UI - 只显示当前页内容
-            if (currentType == TYPE_ALL) {
-                adapter.setItems(mediaList);
-            }
-        }
-        
-        // 重置加载状态
-        isLoading = false;
-        isLoadingMore = false;
-        isInitialLoading = false;
-        
-        // 隐藏加载提示
-        if (page == 1) {
-            showLoading(false);
-        } else {
-            showPageLoading(false);
-        }
-        
-        // 更新分页UI
-        updatePaginationUI();
-        
-        // 确保分页导航显示
-        if (paginationLayout != null && mediaList != null && !mediaList.isEmpty()) {
-            paginationLayout.setVisibility(View.VISIBLE);
-        }
-    }
-    
-    /**
-     * 加载电影数据
-     */
-    private void loadMoviesData(int page) {
-        // 检查缓存
-        if (moviePageCache.containsKey(page)) {
-            // 使用缓存数据
-            List<MediaInfo> cachedData = moviePageCache.get(page);
-            handleMoviesDataResult(cachedData, page, totalMoviesPages);
-            return;
-        }
-        
-        // 设置当前电影页
-        currentMoviePage = page;
-        
-        // 获取高分电影
-        CompletableFuture<Pair<List<MediaInfo>, Integer>> moviesFuture = 
-                tmdbCrawler.getTopRatedMovies(page);
-        
-        moviesFuture.thenAccept(result -> {
-            if (getActivity() == null) return;
-            
-            try {
-                List<MediaInfo> movies = result.first;
-                int totalPages = result.second;
-                
-                // 更新总页数
-                totalMoviesPages = totalPages;
-                
-                // 将结果缓存
-                moviePageCache.put(page, movies);
-                
-                // 处理结果
-                getActivity().runOnUiThread(() -> {
-                    handleMoviesDataResult(movies, page, totalPages);
-                });
-            } catch (Exception e) {
-                handleLoadError(e);
-            }
-        }).exceptionally(this::handleLoadException);
-    }
-    
-    /**
-     * 处理电影数据加载结果
-     */
-    private void handleMoviesDataResult(List<MediaInfo> movies, int page, int totalPagesCount) {
-        // 更新总页数
-        this.totalPages = totalPagesCount;
-        
-        if (movies == null || movies.isEmpty()) {
-            if (page == 1) {
-                // 第一页没有数据，显示空状态
-                showEmptyState();
-            } else {
-                // 后续页没有数据，标记为最后一页
-                isLastPage = true;
-                Toast.makeText(getContext(), "已经是最后一页", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            // 每页独立展示，不再累加
-            // 保存到缓存中对应的页
-            moviePageCache.put(page, movies);
-            
-            // 如果是第一页，同时更新总列表（用于计数）
-            if (page == 1) {
-                moviesList.clear();
-                moviesList.addAll(movies);
-            } else {
-                // 非第一页也需要更新总列表，确保计数准确
-                if (moviesList.isEmpty()) {
-                    moviesList.addAll(movies);
-                }
-            }
-            
-            // 判断是否到达最后一页
-            if (movies.size() < PAGE_SIZE) {
-                isLastPage = true;
-            }
-            
-            // 更新UI - 只显示当前页内容
-            if (currentType == TYPE_MOVIES) {
-                adapter.setItems(movies);
-            }
-        }
-        
-        // 重置加载状态
-        isLoading = false;
-        isLoadingMore = false;
-        isInitialLoading = false;
-        
-        // 隐藏加载提示
-        if (page == 1) {
-            showLoading(false);
-        } else {
-            showPageLoading(false);
-        }
-        
-        // 更新分页UI - 无论什么情况都显示分页导航
-        updatePaginationUI();
-        
-        // 确保分页导航显示
-        if (paginationLayout != null && movies != null && !movies.isEmpty()) {
-            paginationLayout.setVisibility(View.VISIBLE);
-        }
-    }
-    
-    /**
-     * 加载电视剧数据
-     */
-    private void loadTVData(int page) {
-        // 检查缓存
-        if (tvPageCache.containsKey(page)) {
-            // 使用缓存数据
-            List<MediaInfo> cachedData = tvPageCache.get(page);
-            handleTVDataResult(cachedData, page, totalTVPages);
-            return;
-        }
-        
-        // 设置当前电视剧页
-        currentTVPage = page;
-        
-        // 获取高分电视剧
-        CompletableFuture<Pair<List<MediaInfo>, Integer>> tvFuture = 
-                tmdbCrawler.getTopRatedTVShows(page);
-        
-        tvFuture.thenAccept(result -> {
-            if (getActivity() == null) return;
-            
-            try {
-                List<MediaInfo> tvShows = result.first;
-                int totalPages = result.second;
-                
-                // 更新总页数
-                totalTVPages = totalPages;
-                
-                // 将结果缓存
-                tvPageCache.put(page, tvShows);
-                
-                // 处理结果
-                getActivity().runOnUiThread(() -> {
-                    handleTVDataResult(tvShows, page, totalPages);
-                });
-            } catch (Exception e) {
-                handleLoadError(e);
-            }
-        }).exceptionally(this::handleLoadException);
-    }
-    
-    /**
-     * 处理电视剧数据加载结果
-     */
-    private void handleTVDataResult(List<MediaInfo> tvShows, int page, int totalPagesCount) {
-        // 更新总页数
-        this.totalPages = totalPagesCount;
-        
-        if (tvShows == null || tvShows.isEmpty()) {
-            if (page == 1) {
-                // 第一页没有数据，显示空状态
-                showEmptyState();
-            } else {
-                // 后续页没有数据，标记为最后一页
-                isLastPage = true;
-                Toast.makeText(getContext(), "已经是最后一页", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            // 每页独立展示，不再累加
-            // 保存到缓存中对应的页
-            tvPageCache.put(page, tvShows);
-            
-            // 如果是第一页，同时更新总列表（用于计数）
-            if (page == 1) {
-                tvList.clear();
-                tvList.addAll(tvShows);
-            } else {
-                // 非第一页也需要更新总列表，确保计数准确
-                if (tvList.isEmpty()) {
-                    tvList.addAll(tvShows);
-                }
-            }
-            
-            // 判断是否到达最后一页
-            if (tvShows.size() < PAGE_SIZE) {
-                isLastPage = true;
-            }
-            
-            // 更新UI - 只显示当前页内容
-            if (currentType == TYPE_TV) {
-                adapter.setItems(tvShows);
-            }
-        }
-        
-        // 重置加载状态
-        isLoading = false;
-        isLoadingMore = false;
-        isInitialLoading = false;
-        
-        // 隐藏加载提示
-        if (page == 1) {
-            showLoading(false);
-        } else {
-            showPageLoading(false);
-        }
-        
-        // 更新分页UI - 无论什么情况都显示分页导航
-        updatePaginationUI();
-        
-        // 确保分页导航显示
-        if (paginationLayout != null && tvShows != null && !tvShows.isEmpty()) {
-            paginationLayout.setVisibility(View.VISIBLE);
-        }
-    }
-    
-    /**
-     * 显示空状态
-     */
-    private void showEmptyState() {
-        tvEmpty.setVisibility(View.VISIBLE);
-        rvPointsContent.setVisibility(View.GONE);
-        
-        if (paginationLayout != null) {
-            paginationLayout.setVisibility(View.GONE);
         }
     }
     
@@ -802,305 +805,6 @@ public class PointsTabFragment extends Fragment {
             Toast.makeText(getContext(), "打开详情页失败", Toast.LENGTH_SHORT).show();
         }
     }
-    
-    /**
-     * 检查是否显示空状态
-     */
-    private void checkEmptyState() {
-        List<?> currentList = null;
-        
-        switch (currentType) {
-            case TYPE_ALL:
-                currentList = allMediaList;
-                break;
-            case TYPE_MOVIES:
-                currentList = moviesList;
-                break;
-            case TYPE_TV:
-                currentList = tvList;
-                break;
-        }
-        
-        if (currentList == null || currentList.isEmpty()) {
-            tvEmpty.setVisibility(View.VISIBLE);
-            rvPointsContent.setVisibility(View.GONE);
-            // 空状态下隐藏分页导航
-            if (paginationLayout != null) {
-                paginationLayout.setVisibility(View.GONE);
-            }
-        } else {
-            tvEmpty.setVisibility(View.GONE);
-            rvPointsContent.setVisibility(View.VISIBLE);
-            // 有数据时显示分页导航
-            if (paginationLayout != null) {
-                paginationLayout.setVisibility(View.VISIBLE);
-                // 确保更新分页UI
-                updatePaginationUI();
-            }
-        }
-    }
-    
-    /**
-     * 显示或隐藏加载状态
-     */
-    private void showLoading(boolean isLoading) {
-        if (isLoading && isInitialLoading) {
-            // 初始加载，显示中心加载器
-            progressBar.setVisibility(View.VISIBLE);
-            progressBar.bringToFront(); // 确保显示在最上层
-            progressBar.setLayoutParams(new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            ));
-            rvPointsContent.setVisibility(View.VISIBLE);
-            rvPointsContent.setAlpha(0.5f); // 半透明效果
-            rvPointsContent.setEnabled(false); // 禁用交互
-            tvEmpty.setVisibility(View.GONE);
-            
-            // 隐藏分页导航
-            if (paginationLayout != null) {
-                paginationLayout.setVisibility(View.GONE);
-            }
-        } else if (isLoading && isLoadingMore) {
-            // 加载更多，显示底部加载器
-            progressBar.setVisibility(View.VISIBLE);
-            progressBar.bringToFront(); // 确保显示在最上层
-            progressBar.setLayoutParams(new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
-            ));
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) progressBar.getLayoutParams();
-            params.bottomMargin = 8;
-            progressBar.setLayoutParams(params);
-            
-            // 显示分页导航但禁用按钮
-            if (paginationLayout != null) {
-                paginationLayout.setVisibility(View.VISIBLE);
-                paginationLayout.setAlpha(0.5f); // 半透明效果
-                if (btnPrevPage != null) btnPrevPage.setEnabled(false);
-                if (btnNextPage != null) btnNextPage.setEnabled(false);
-            }
-        } else {
-            // 加载完成
-            progressBar.setVisibility(View.GONE);
-            
-            // 检查是否显示空状态
-            checkEmptyState();
-            
-            // 恢复列表透明度和交互
-            rvPointsContent.setAlpha(1.0f);
-            rvPointsContent.setEnabled(true);
-            
-        }
-    }
-
-    /**
-     * 重置分页状态
-     */
-    private void resetPaginationState() {
-        isLastPage = false;
-        isLoading = false;
-        isLoadingMore = false;
-        isPageOperation = false;
-    }
-    
-    /**
-     * 设置分页按钮的点击事件
-     */
-    private void setupPaginationButtons() {
-        btnPrevPage.setOnClickListener(v -> {
-            if (currentPage > 1 && !isLoading) {
-                // 先滚动到顶部
-                scrollToTop();
-                
-                // 加载上一页前先显示加载动画
-                showPageLoading(true);
-                
-                // 使用Handler延迟执行加载，确保滚动和动画效果先显示
-                handler.postDelayed(() -> {
-                    // 加载上一页
-                    loadMediaData(currentType, currentPage - 1);
-                }, 200); // 增加延迟，确保滚动效果完成
-            }
-        });
-        
-        btnNextPage.setOnClickListener(v -> {
-            if (!isLoading) {
-                // 先滚动到顶部
-                scrollToTop();
-                
-                // 加载下一页前先显示加载动画
-                showPageLoading(true);
-                
-                // 使用Handler延迟执行加载，确保滚动和动画效果先显示
-                handler.postDelayed(() -> {
-                    if (currentPage < totalPages) {
-                        // 加载下一页
-                        loadMediaData(currentType, currentPage + 1);
-                    } else if (!isLastPage) {
-                        // 总页数可能不准确，尝试加载下一页
-                        loadMediaData(currentType, currentPage + 1);
-                    }
-                }, 200); // 增加延迟，确保滚动效果完成
-            }
-        });
-    }
-    
-    /**
-     * 更新分页导航UI
-     */
-    private void updatePaginationUI() {
-        if (paginationLayout == null || pageNumberContainer == null) {
-            return;
-        }
-        
-        // 显示分页导航栏
-        paginationLayout.setVisibility(View.VISIBLE);
-        
-        // 根据当前类型设置总数和页数
-        int itemCount = 0;
-        switch (currentType) {
-            case TYPE_ALL:
-                itemCount = allMediaList.size();
-                // 全部类型使用两者中较大的页数
-                totalPages = Math.max(totalMoviesPages, totalTVPages);
-                break;
-            case TYPE_MOVIES:
-                itemCount = moviesList.size();
-                // 电影类型使用电影的总页数
-                totalPages = totalMoviesPages;
-                // 确保totalPages至少为1
-                if (totalPages <= 0) totalPages = 1;
-                break;
-            case TYPE_TV:
-                itemCount = tvList.size();
-                // 电视剧类型使用电视剧的总页数
-                totalPages = totalTVPages;
-                // 确保totalPages至少为1
-                if (totalPages <= 0) totalPages = 1;
-                break;
-        }
-        
-        // 调试日志
-        Log.d(TAG, String.format("更新分页UI - 类型: %d, 当前页: %d, 总页数: %d, 项目数: %d",
-                currentType, currentPage, totalPages, itemCount));
-        
-        // 设置总页数提示
-        tvTotalPages.setText(String.format("共 %d 页 (约%d项)", totalPages, itemCount));
-        
-        // 上一页按钮状态
-        btnPrevPage.setEnabled(currentPage > 1);
-        btnPrevPage.setAlpha(currentPage > 1 ? 1.0f : 0.5f);
-        
-        // 下一页按钮状态
-        btnNextPage.setEnabled(!isLastPage && currentPage < totalPages);
-        btnNextPage.setAlpha(!isLastPage && currentPage < totalPages ? 1.0f : 0.5f);
-        
-        // 清空原有页码按钮
-        pageNumberContainer.removeAllViews();
-        
-        // 如果总页数很小，直接显示所有页码
-        if (totalPages <= MAX_PAGE_BUTTONS) {
-            for (int i = 1; i <= totalPages; i++) {
-                addPageButton(String.valueOf(i), i);
-            }
-            return;
-        }
-        
-        // 对于较多页码的情况，使用更智能的显示逻辑
-        // 始终显示第一页、最后一页，以及当前页的前后共5个页码
-        
-        // 确定显示的页码范围
-        int halfRange = MAX_PAGE_BUTTONS / 2;
-        int startPage = Math.max(1, currentPage - halfRange);
-        int endPage = Math.min(totalPages, startPage + MAX_PAGE_BUTTONS - 1);
-        
-        // 调整startPage，确保能显示足够的页码
-        if (endPage - startPage + 1 < MAX_PAGE_BUTTONS) {
-            startPage = Math.max(1, endPage - MAX_PAGE_BUTTONS + 1);
-        }
-        
-        // 显示第一页（始终显示）
-        addPageButton("1", 1);
-        
-        // 如果起始页不是第一页，显示省略号
-        if (startPage > 2) {
-            addPageButton("...", -1);
-        }
-        
-        // 显示中间的页码
-        for (int i = Math.max(2, startPage); i <= Math.min(endPage, totalPages - 1); i++) {
-            addPageButton(String.valueOf(i), i);
-        }
-        
-        // 显示省略号
-        if (endPage < totalPages - 1) {
-            addPageButton("...", -1);
-        }
-        
-        // 显示最后一页（如果总页数大于1）
-        if (totalPages > 1) {
-            addPageButton(String.valueOf(totalPages), totalPages);
-        }
-    }
-    
-    /**
-     * 添加页码按钮
-     */
-    private void addPageButton(String text, int pageNum) {
-        boolean isActive = pageNum == currentPage;
-        
-        // 创建按钮
-        TextView pageButton = new TextView(requireContext());
-        pageButton.setText(text);
-        pageButton.setTextSize(14);
-        pageButton.setGravity(android.view.Gravity.CENTER);
-        
-        // 设置布局参数
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                getResources().getDimensionPixelSize(R.dimen.page_indicator_size),  // 40dp
-                getResources().getDimensionPixelSize(R.dimen.page_indicator_size)   // 40dp
-        );
-        params.setMargins(4, 0, 4, 0);
-        pageButton.setLayoutParams(params);
-        
-        // 设置样式
-        if (isActive) {
-            // 当前页样式
-            pageButton.setBackgroundResource(R.drawable.bg_page_number_active);
-            pageButton.setTextColor(Color.WHITE);
-        } else {
-            // 其他页样式
-            pageButton.setBackgroundResource(R.drawable.bg_page_number_normal);
-            pageButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
-        }
-        
-        // 设置点击事件（只有实际页码按钮才可点击）
-        if (pageNum > 0) {
-            pageButton.setOnClickListener(v -> {
-                if (currentPage != pageNum && !isLoading) {
-                    // 先滚动到顶部
-                    scrollToTop();
-                    
-                    // 显示加载动画
-                    showPageLoading(true);
-                    
-                    // 使用Handler延迟执行加载，确保滚动和动画效果先显示
-                    handler.postDelayed(() -> {
-                        // 点击页码按钮时加载对应页面
-                        loadMediaData(currentType, pageNum);
-                    }, 200); // 增加延迟，确保滚动效果完成
-                }
-            });
-        } else {
-            pageButton.setEnabled(false);
-        }
-        
-        // 添加到容器
-        pageNumberContainer.addView(pageButton);
-    }
 
     /**
      * 处理加载异常
@@ -1119,82 +823,11 @@ public class PointsTabFragment extends Fragment {
      * 处理加载错误
      */
     private void handleLoadError(Throwable throwable) {
-        isInitialLoading = false;
-        isLoadingMore = false;
-        isLoading = false;
-        
-        // 根据当前加载的页码决定如何隐藏加载提示
-        if (currentPage == 1) {
-            showLoading(false);
-        } else {
-            showPageLoading(false);
-        }
+        // 隐藏加载提示
+        paginationHelper.showLoading(false);
         
         Toast.makeText(getContext(), R.string.load_failed, Toast.LENGTH_SHORT).show();
         Log.e(TAG, "加载高分内容失败", throwable);
-    }
-
-    /**
-     * 显示初始加载动画
-     */
-    private void showInitialLoadingAnimation() {
-        if (progressBar != null) {
-            // 确保进度条居中显示
-            progressBar.setVisibility(View.VISIBLE);
-            // 提高progressBar的层级，确保不被遮挡
-            progressBar.bringToFront();
-            // 使用FrameLayout的居中布局参数
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            );
-            progressBar.setLayoutParams(params);
-        }
-        
-        // 隐藏所有内容视图，但保持半透明效果以便用户知道正在加载
-        if (rvPointsContent != null) {
-            rvPointsContent.setVisibility(View.VISIBLE);
-            rvPointsContent.setAlpha(0.5f);
-            rvPointsContent.setEnabled(false); // 禁用点击
-        }
-        
-        if (tvEmpty != null) {
-            tvEmpty.setVisibility(View.GONE);
-        }
-        
-        // 处理分页导航 - 先隐藏，数据加载后再显示
-        if (paginationLayout != null) {
-            paginationLayout.setVisibility(View.GONE);
-        }
-        
-        // 重置适配器内容，保证在切换标签时没有"闪烁"
-        if (adapter != null) {
-            adapter.setItems(new ArrayList<>());
-        }
-        
-        // 调试日志
-        Log.d(TAG, "显示初始加载动画");
-    }
-
-    /**
-     * 滚动到顶部
-     */
-    private void scrollToTop() {
-        if (rvPointsContent != null) {
-            // 确保RecyclerView可见
-            rvPointsContent.setVisibility(View.VISIBLE);
-            
-            // 立即滚动到顶部
-            rvPointsContent.scrollToPosition(0);
-            
-            // 再使用平滑滚动，提供更好的视觉效果
-            handler.postDelayed(() -> {
-                if (rvPointsContent != null && isAdded()) {
-                    rvPointsContent.smoothScrollToPosition(0);
-                }
-            }, 50);
-        }
     }
 
     /**
@@ -1210,14 +843,32 @@ public class PointsTabFragment extends Fragment {
             (currentType == TYPE_TV && !tvList.isEmpty())) {
             
             // 确保分页状态正确
-            updatePaginationUI();
+            paginationHelper.updatePaginationUI();
             
-            // 显示分页导航
+            // 确保分页导航显示
             if (paginationLayout != null) {
                 paginationLayout.setVisibility(View.VISIBLE);
             }
-            
-            Log.d(TAG, "onResume: 更新分页UI，当前类型: " + currentType);
         }
+    }
+
+    /**
+     * 初始化适配器
+     */
+    private void initAdapter() {
+        adapter = new PointsAdapter(getContext());
+        adapter.setCurrentType(TYPE_ALL);
+        rvPointsContent.setAdapter(adapter);
+        
+        // 确保GridLayoutManager已经设置
+        if (!(rvPointsContent.getLayoutManager() instanceof GridLayoutManager)) {
+            rvPointsContent.setLayoutManager(new GridLayoutManager(getContext(), 3));
+        }
+        
+        // 设置点击监听器
+        adapter.setOnItemClickListener((position, item) -> {
+            // 点击高分内容项打开TMDb详情页
+            openTMDbDetail(item);
+        });
     }
 } 

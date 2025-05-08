@@ -40,6 +40,10 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     // 当前类型(全部/电影/电视剧)
     private int mCurrentType = PointsTabFragment.TYPE_ALL;
     
+    // 当前页码和每页条数（用于正确计算排名）
+    private int mCurrentPage = 1;
+    private int mPageSize = 21;
+    
     // 点击监听
     private OnItemClickListener mOnItemClickListener;
     
@@ -48,6 +52,15 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
      */
     public PointsAdapter(Context context) {
         this.mContext = context;
+    }
+    
+    /**
+     * 设置当前页码和页面大小（用于正确计算排名）
+     */
+    public void setPageInfo(int page, int pageSize) {
+        this.mCurrentPage = page;
+        this.mPageSize = pageSize;
+        notifyDataSetChanged();
     }
     
     /**
@@ -100,7 +113,7 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         if (holder instanceof AllViewHolder) {
             setupAllViewHolder((AllViewHolder) holder, item, position);
         } else if (holder instanceof NormalViewHolder) {
-            setupNormalViewHolder((NormalViewHolder) holder, item);
+            setupNormalViewHolder((NormalViewHolder) holder, item, position);
         }
     }
     
@@ -122,11 +135,72 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         holder.tvYear.setText(item.getReleaseDate());
         
         // 设置媒体类型
-        if (item.getMediaType() == MediaInfo.TYPE_MOVIE) {
+        if (item.getMediaType().equals(MediaInfo.TYPE_MOVIE)) {
             holder.tvMediaType.setText(R.string.top_rated_movie_type);
         } else {
             holder.tvMediaType.setText(R.string.top_rated_tv_type);
         }
+        
+        // 全部分类下的项目也显示排名
+        setupAllRankDisplay(holder, position);
+        
+        // 加载海报
+        loadPoster(holder.ivPoster, item.getPosterUrl());
+        
+        // 设置点击事件
+        holder.itemView.setOnClickListener(v -> {
+            if (mOnItemClickListener != null) {
+                mOnItemClickListener.onItemClick(position, item);
+            }
+        });
+    }
+    
+    /**
+     * 设置"全部"分类下的排名显示
+     */
+    private void setupAllRankDisplay(AllViewHolder holder, int position) {
+        // 计算排名（从1开始）
+        int rank = position + 1;
+        
+        // 为1-3名提供特殊样式
+        if (rank <= 3) {
+            // 根据排名设置特殊背景或颜色
+            switch (rank) {
+                case 1:
+                    // 金色背景
+                    holder.tvRating.setBackgroundResource(R.drawable.bg_rating_gold);
+                    break;
+                case 2:
+                    // 银色背景
+                    holder.tvRating.setBackgroundResource(R.drawable.bg_rating_silver);
+                    break;
+                case 3:
+                    // 铜色背景
+                    holder.tvRating.setBackgroundResource(R.drawable.bg_rating_bronze);
+                    break;
+            }
+        } else {
+            // 4及以后使用普通样式
+            holder.tvRating.setBackgroundResource(R.drawable.bg_rating_normal);
+        }
+    }
+    
+    /**
+     * 设置电影/电视剧分类视图
+     */
+    private void setupNormalViewHolder(NormalViewHolder holder, MediaInfo item, int position) {
+        // 设置基本信息
+        holder.tvTitle.setText(item.getMediaName());
+        
+        // 设置评分
+        if (item.getRating() > 0) {
+            holder.tvRating.setText(String.format("%.1f", item.getRating()));
+        } else {
+            holder.tvRating.setText("--");
+        }
+        
+        // 设置年份
+        holder.tvYear.setText(item.getReleaseDate());
         
         // 设置排名
         setupRankDisplay(holder, position);
@@ -143,37 +217,10 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     }
     
     /**
-     * 设置电影/电视剧分类视图
-     */
-    private void setupNormalViewHolder(NormalViewHolder holder, MediaInfo item) {
-        // 设置基本信息
-        holder.tvTitle.setText(item.getMediaName());
-        
-        // 设置评分
-        if (item.getRating() > 0) {
-            holder.tvRating.setText(String.format("%.1f", item.getRating()));
-        } else {
-            holder.tvRating.setText("--");
-        }
-        
-        // 设置年份
-        holder.tvYear.setText(item.getReleaseDate());
-        
-        // 加载海报
-        loadPoster(holder.ivPoster, item.getPosterUrl());
-        
-        // 设置点击事件
-        holder.itemView.setOnClickListener(v -> {
-            if (mOnItemClickListener != null) {
-                mOnItemClickListener.onItemClick(holder.getAdapterPosition(), item);
-            }
-        });
-    }
-    
-    /**
      * 设置排名显示
      */
-    private void setupRankDisplay(AllViewHolder holder, int position) {
+    private void setupRankDisplay(NormalViewHolder holder, int position) {
+        // 计算全局排名
         int rank = position + 1;
         
         if (rank <= 3) {
@@ -185,12 +232,18 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             switch (rank) {
                 case 1:
                     holder.ivRankSpecial.setImageResource(R.drawable.ic_rk1);
+                    // 设置第一名的其他特殊样式
+                    holder.tvRating.setBackgroundResource(R.drawable.bg_rating_gold);
                     break;
                 case 2:
                     holder.ivRankSpecial.setImageResource(R.drawable.ic_rk2);
+                    // 设置第二名的其他特殊样式
+                    holder.tvRating.setBackgroundResource(R.drawable.bg_rating_silver);
                     break;
                 case 3:
                     holder.ivRankSpecial.setImageResource(R.drawable.ic_rk3);
+                    // 设置第三名的其他特殊样式
+                    holder.tvRating.setBackgroundResource(R.drawable.bg_rating_bronze);
                     break;
             }
         } else {
@@ -198,6 +251,7 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             holder.ivRankSpecial.setVisibility(View.GONE);
             holder.tvRank.setVisibility(View.VISIBLE);
             holder.tvRank.setText(String.valueOf(rank));
+            holder.tvRating.setBackgroundResource(R.drawable.bg_rating_normal);
         }
     }
     
@@ -230,8 +284,6 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
      */
     static class AllViewHolder extends RecyclerView.ViewHolder {
         ImageView ivPoster;
-        ImageView ivRankSpecial;
-        TextView tvRank;
         TextView tvRating;
         TextView tvTitle;
         TextView tvMediaType;
@@ -240,8 +292,6 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         public AllViewHolder(@NonNull View itemView) {
             super(itemView);
             ivPoster = itemView.findViewById(R.id.iv_poster);
-            ivRankSpecial = itemView.findViewById(R.id.iv_rank_special);
-            tvRank = itemView.findViewById(R.id.tv_rank);
             tvRating = itemView.findViewById(R.id.tv_rating);
             tvTitle = itemView.findViewById(R.id.tv_title);
             tvMediaType = itemView.findViewById(R.id.tv_media_type);
@@ -254,6 +304,8 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
      */
     static class NormalViewHolder extends RecyclerView.ViewHolder {
         ImageView ivPoster;
+        ImageView ivRankSpecial;
+        TextView tvRank;
         TextView tvRating;
         TextView tvTitle;
         TextView tvYear;
@@ -261,6 +313,8 @@ public class PointsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         public NormalViewHolder(@NonNull View itemView) {
             super(itemView);
             ivPoster = itemView.findViewById(R.id.iv_poster);
+            ivRankSpecial = itemView.findViewById(R.id.iv_rank_special);
+            tvRank = itemView.findViewById(R.id.tv_rank);
             tvRating = itemView.findViewById(R.id.tv_rating);
             tvTitle = itemView.findViewById(R.id.tv_title);
             tvYear = itemView.findViewById(R.id.tv_year);

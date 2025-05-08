@@ -27,31 +27,6 @@
                 android:background="@color/surface"
                 tools:src="@drawable/ic_image_placeholder" />
 
-            <!-- 排名1-3标识 -->
-            <ImageView
-                android:id="@+id/iv_rank_special"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_gravity="top|start"
-                android:layout_margin="4dp"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:src="@drawable/ic_rk1" />
-
-            <!-- 普通排名标识 -->
-            <TextView
-                android:id="@+id/tv_rank"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="top|start"
-                android:layout_margin="4dp"
-                android:background="@drawable/bg_rank_badge"
-                android:gravity="center"
-                android:textColor="@android:color/white"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                tools:text="4" />
-
             <!-- 评分 -->
             <LinearLayout
                 android:layout_width="wrap_content"
