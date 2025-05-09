@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.lonely.dramatracker.models.MediaInfo;
 import com.lonely.dramatracker.models.SearchResult;
+import com.lonely.dramatracker.models.DailyAnime;
+import com.lonely.dramatracker.models.WeeklySchedule;
 
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -11,7 +13,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -21,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 public class BangumiCrawler {
     private static final String TAG = "BangumiCrawler";
     private static final String BASE_URL = "https://bgm.tv";
+    private static final String CALENDAR_URL = "https://chii.in/calendar";
 
     /**
      * 搜索动漫
@@ -240,5 +245,244 @@ public class BangumiCrawler {
                 throw new RuntimeException("获取详细信息失败", e);
             }
         });
+    }
+
+    /**
+     * 获取每日放送表
+     * @return 每周放送数据
+     */
+    public CompletableFuture<WeeklySchedule> getWeeklySchedule() {
+        return CompletableFuture.supplyAsync(() -> {
+            WeeklySchedule weeklySchedule = new WeeklySchedule();
+            try {
+                // 增加超时时间和重试次数
+                Log.d(TAG, "开始获取每日放送表，URL: " + CALENDAR_URL);
+                Document doc = CrawlerUtils.parseHtml(CALENDAR_URL, 5);
+                
+                // 打印HTML内容以便调试
+                CrawlerUtils.logHtmlContent(doc, TAG, 1000);
+                
+                // 根据实际的HTML结构修改选择器
+                // 可以看到，HTML中的结构是 #colunmSingle .BgmCalendar .large > li.week
+                Elements weekdayElements = doc.select("#colunmSingle .BgmCalendar ul.large > li.week");
+                Log.d(TAG, "找到星期容器数量: " + weekdayElements.size());
+                
+                if (weekdayElements.isEmpty()) {
+                    Log.e(TAG, "未找到任何星期容器，尝试其他选择器");
+                    // 尝试更宽松的选择器
+                    weekdayElements = doc.select("li.week");
+                    Log.d(TAG, "使用宽松选择器找到星期容器数量: " + weekdayElements.size());
+                }
+                
+                // 遍历星期容器
+                for (Element weekdayElement : weekdayElements) {
+                    // 星期标题在dt元素中，如<dt class="Sun"><div><h3>星期日</h3></div></dt>
+                    Element titleElement = weekdayElement.selectFirst("dt div h3");
+                    if (titleElement == null) {
+                        Log.d(TAG, "在星期容器中未找到标题元素dt div h3，尝试其他选择器");
+                        titleElement = weekdayElement.selectFirst("dt");
+                        if (titleElement == null) {
+                            Log.d(TAG, "在星期容器中未找到标题元素dt，跳过");
+                            continue;
+                        }
+                    }
+                    
+                    String weekdayText = titleElement.text();
+                    Log.d(TAG, "找到星期标题: " + weekdayText);
+                    
+                    String dayOfWeek = extractDayOfWeek(weekdayText);
+                    if (dayOfWeek == null) {
+                        Log.d(TAG, "无法识别的星期: " + weekdayText);
+                        continue;
+                    }
+                    
+                    // 动漫列表在dd元素下的ul.coverList下的li元素
+                    Elements animeItems = weekdayElement.select("dd ul.coverList > li");
+                    Log.d(TAG, "找到 " + dayOfWeek + " 的 " + animeItems.size() + " 个动漫项");
+                    
+                    List<DailyAnime> animeList = new ArrayList<>();
+                    
+                    for (Element animeItem : animeItems) {
+                        try {
+                            DailyAnime anime = new DailyAnime();
+                            
+                            // 调试每个动漫项的HTML
+                            Log.v(TAG, "动漫项HTML: " + animeItem.outerHtml().substring(0, Math.min(100, animeItem.outerHtml().length())) + "...");
+                            
+                            // 解析动漫标题，在info div中的第一个a标签
+                            Element titleLinkElement = animeItem.selectFirst(".info p a.nav");
+                            if (titleLinkElement != null) {
+                                String title = titleLinkElement.text();
+                                if (title != null && !title.isEmpty()) {
+                                    anime.setTitleZh(title);
+                                } else {
+                                    Log.d(TAG, "标题为空，尝试获取下一个标题");
+                                    // 尝试获取第二个标签中的标题
+                                    Element secondTitleElement = animeItem.select(".info p a.nav").size() > 1 
+                                        ? animeItem.select(".info p a.nav").get(1) : null;
+                                    if (secondTitleElement != null) {
+                                        Element smallEmElement = secondTitleElement.selectFirst("small em");
+                                        if (smallEmElement != null) {
+                                            anime.setTitleZh(smallEmElement.text());
+                                        } else {
+                                            anime.setTitleZh(secondTitleElement.text());
+                                        }
+                                    }
+                                }
+                                
+                                // 提取ID和URL
+                                String href = titleLinkElement.attr("href");
+                                if (href.contains("/subject/")) {
+                                    String id = href.substring(href.lastIndexOf("/") + 1);
+                                    anime.setSourceId(id);
+                                    // 确保URL完整
+                                    anime.setSourceUrl(CrawlerUtils.ensureFullUrl(href, "https://chii.in"));
+                                }
+                            } else {
+                                // 尝试其他选择器
+                                Element altTitleElement = animeItem.selectFirst(".info a");
+                                if (altTitleElement != null) {
+                                    anime.setTitleZh(altTitleElement.text());
+                                    
+                                    // 提取ID和URL
+                                    String href = altTitleElement.attr("href");
+                                    if (href.contains("/subject/")) {
+                                        String id = href.substring(href.lastIndexOf("/") + 1);
+                                        anime.setSourceId(id);
+                                        anime.setSourceUrl(CrawlerUtils.ensureFullUrl(href, "https://chii.in"));
+                                    }
+                                }
+                            }
+                            
+                            // 解析原始标题（日文/英文标题）
+                            Element subtitleElement = animeItem.selectFirst(".info p:nth-child(2) a.nav small em");
+                            if (subtitleElement != null) {
+                                anime.setTitleOriginal(subtitleElement.text());
+                            }
+                            
+                            // 从背景样式中提取海报URL
+                            String inlineStyle = animeItem.attr("style");
+                            if (inlineStyle != null && !inlineStyle.isEmpty()) {
+                                Log.v(TAG, "动漫项style属性: " + inlineStyle);
+                                if (inlineStyle.contains("url(") && inlineStyle.contains(")")) {
+                                    String posterUrl = inlineStyle.substring(inlineStyle.indexOf("url(") + 4, inlineStyle.indexOf(")"));
+                                    // 移除可能存在的引号
+                                    posterUrl = posterUrl.replace("'", "").replace("\"", "");
+                                    // 解码HTML实体
+                                    posterUrl = posterUrl.replace("&#39;", "'");
+                                    Log.d(TAG, "提取到海报URL: " + posterUrl);
+                                    anime.setPosterUrl(CrawlerUtils.ensureFullUrl(posterUrl, "https:"));
+                                }
+                            }
+                            
+                            if (anime.getPosterUrl() == null || anime.getPosterUrl().isEmpty()) {
+                                Log.d(TAG, "未从样式中找到海报URL，尝试从详情页获取");
+                                tryToGetPosterFromDetail(anime);
+                            }
+                            
+                            // 添加到列表前检查是否有基本信息
+                            if ((anime.getTitleZh() != null && !anime.getTitleZh().isEmpty()) || 
+                                (anime.getTitleOriginal() != null && !anime.getTitleOriginal().isEmpty())) {
+                                animeList.add(anime);
+                                Log.d(TAG, "添加动漫: " + anime.getTitleZh() + ", ID: " + anime.getSourceId());
+                            } else {
+                                Log.w(TAG, "动漫标题为空，不添加");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "解析动漫项时出错: " + e.getMessage(), e);
+                        }
+                    }
+                    
+                    // 将当天动漫添加到对应的星期
+                    if (!animeList.isEmpty()) {
+                        Log.d(TAG, dayOfWeek + " 添加了 " + animeList.size() + " 个动漫");
+                        switch (dayOfWeek) {
+                            case "星期日":
+                                weeklySchedule.setSundayAnime(animeList);
+                                break;
+                            case "星期一":
+                                weeklySchedule.setMondayAnime(animeList);
+                                break;
+                            case "星期二":
+                                weeklySchedule.setTuesdayAnime(animeList);
+                                break;
+                            case "星期三":
+                                weeklySchedule.setWednesdayAnime(animeList);
+                                break;
+                            case "星期四":
+                                weeklySchedule.setThursdayAnime(animeList);
+                                break;
+                            case "星期五":
+                                weeklySchedule.setFridayAnime(animeList);
+                                break;
+                            case "星期六":
+                                weeklySchedule.setSaturdayAnime(animeList);
+                                break;
+                        }
+                    } else {
+                        Log.w(TAG, dayOfWeek + " 没有找到任何动漫");
+                    }
+                }
+                
+                // 检查是否成功获取到任何数据
+                Log.d(TAG, "爬取完成，检查数据: 星期日=" + 
+                      (weeklySchedule.getSundayAnime() != null ? weeklySchedule.getSundayAnime().size() : 0) + 
+                      ", 星期一=" + 
+                      (weeklySchedule.getMondayAnime() != null ? weeklySchedule.getMondayAnime().size() : 0));
+                      
+            } catch (Exception e) {
+                Log.e(TAG, "获取每日放送表失败: " + e.getMessage(), e);
+                throw new RuntimeException("获取每日放送表失败", e);
+            }
+            return weeklySchedule;
+        });
+    }
+    
+    /**
+     * 尝试从详情页获取海报
+     */
+    private void tryToGetPosterFromDetail(DailyAnime anime) {
+        if (anime.getSourceId() == null || anime.getSourceId().isEmpty()) {
+            return;
+        }
+        
+        try {
+            String detailUrl = "https://chii.in/subject/" + anime.getSourceId();
+            Document detailDoc = CrawlerUtils.parseHtml(detailUrl, 3);
+            
+            Element posterElement = detailDoc.selectFirst("img.cover");
+            if (posterElement != null) {
+                String posterUrl = posterElement.attr("src");
+                anime.setPosterUrl(CrawlerUtils.ensureFullUrl(posterUrl, "https:"));
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "获取详情页海报失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 从标题中提取星期几
+     */
+    private String extractDayOfWeek(String weekdayText) {
+        if (weekdayText == null) return null;
+        
+        weekdayText = weekdayText.toLowerCase();
+        
+        if (weekdayText.contains("星期日") || weekdayText.contains("sunday")) {
+            return "星期日";
+        } else if (weekdayText.contains("星期一") || weekdayText.contains("monday")) {
+            return "星期一";
+        } else if (weekdayText.contains("星期二") || weekdayText.contains("tuesday")) {
+            return "星期二";
+        } else if (weekdayText.contains("星期三") || weekdayText.contains("wednesday")) {
+            return "星期三";
+        } else if (weekdayText.contains("星期四") || weekdayText.contains("thursday")) {
+            return "星期四";
+        } else if (weekdayText.contains("星期五") || weekdayText.contains("friday")) {
+            return "星期五";
+        } else if (weekdayText.contains("星期六") || weekdayText.contains("saturday")) {
+            return "星期六";
+        }
+        return null;
     }
 }

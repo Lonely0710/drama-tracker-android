@@ -57,4 +57,14 @@
     <!-- Chip选择器颜色 -->
     <color name="chip_background_color">@color/chip_background_selector</color>
     <color name="chip_text_color">@color/chip_text_color_selector</color>
+
+    <!-- 每周日期对应的颜色 -->
+    <color name="week_sunday">#E53935</color>
+    <color name="week_monday">#FF9800</color>
+    <color name="week_tuesday">#CDDC39</color>
+    <color name="week_wednesday">#8BC34A</color>
+    <color name="week_thursday">#4CAF50</color>
+    <color name="week_friday">#03A9F4</color>
+    <color name="week_saturday">#1E88E5</color>
+    <color name="week_weekday">#424242</color>
 </resources>

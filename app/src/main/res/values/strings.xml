@@ -53,4 +53,21 @@
     <string name="top_rated_tv_type">剧集</string>
     <string name="load_more_failed">加载更多失败，请稍后再试</string>
     <string name="is_last_page">已经是最后一页</string>
+    
+    <string name="week_day">星期</string>
+    
+    <!-- 每日放送 -->
+    <string name="week_icon">星期图标</string>
+    <string name="week_icon_desc">星期图标</string>
+    <string name="anime_poster">动漫海报</string>
+    <string name="week_sun">星期日</string>
+    <string name="week_mon">星期一</string>
+    <string name="week_tue">星期二</string>
+    <string name="week_wed">星期三</string>
+    <string name="week_thu">星期四</string>
+    <string name="week_fri">星期五</string>
+    <string name="week_sat">星期六</string>
+    <string name="anime_count">%d部作品</string>
+    <string name="daily_empty">今日暂无新番</string>
+    <string name="daily_loading">正在加载每日放送…</string>
 </resources>

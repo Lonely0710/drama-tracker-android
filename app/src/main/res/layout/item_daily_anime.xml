@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="120dp"
+    android:layout_height="180dp"
+    android:layout_marginEnd="8dp"
+    app:cardCornerRadius="6dp"
+    app:cardElevation="1dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- 动漫海报 -->
+        <ImageView
+            android:id="@+id/iv_anime_poster"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/anime_poster"
+            tools:src="@drawable/placeholder_poster" />
+
+        <!-- 标题蒙版 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/gradient_black_transparent"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <!-- 动漫标题 -->
+            <TextView
+                android:id="@+id/tv_anime_title_zh"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="动漫标题" />
+
+            <!-- 动漫原名 -->
+            <TextView
+                android:id="@+id/tv_anime_title_original"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:alpha="0.8"
+                android:visibility="gone"
+                tools:text="Original Title"
+                tools:visibility="visible"
+                tools:ignore="SmallSp" />
+        </LinearLayout>
+    </FrameLayout>
+</androidx.cardview.widget.CardView>
