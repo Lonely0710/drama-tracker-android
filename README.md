@@ -3,10 +3,10 @@
 </div>
 
 <p align="center">
-  <img alt="license" src="https://img.shields.io/github/license/Lonely0710/drama-tracker-Android" />
-  <img alt="stars" src="https://img.shields.io/github/stars/Lonely0710/drama-tracker-Android" />
-  <img alt="forks" src="https://img.shields.io/github/forks/Lonely0710/drama-tracker-Android" />
-  <img alt="issues" src="https://img.shields.io/github/issues/Lonely0710/drama-tracker-Android" />
+  <img alt="license" src="https://img.shields.io/github/license/Lonely0710/drama-tracker-android?style=flat-round" />
+  <img alt="gitHubtoplanguage" src="https://img.shields.io/github/languages/top/Lonely0710/drama-tracker-android" />
+  <img alt="issues" src="https://img.shields.io/github/issues/Lonely0710/drama-tracker-android" />
+  <img alt="stars" src="https://img.shields.io/github/stars/Lonely0710/drama-tracker-android" />
   <!-- <img alt="release" src="https://img.shields.io/github/v/release/Lonely0710/drama-tracker-Android" /> -->
   <!-- <img alt="downloads" src="https://img.shields.io/github/downloads/Lonely0710/drama-tracker-Android/total" /> -->
 </p>
